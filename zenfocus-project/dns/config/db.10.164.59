@@ -1,0 +1,19 @@
+$TTL 86400
+@       IN      SOA     dns.zenfocus.com.br. admin.zenfocus.com.br. (
+                        2024101801
+                        3600
+                        1800
+                        604800
+                        86400
+                        )
+
+; Servidores de Nomes
+@       IN      NS      dns.zenfocus.com.br.
+
+; Registros PTR (reverso)
+91      IN      PTR     dns.zenfocus.com.br.
+92      IN      PTR     gitlab.zenfocus.com.br.
+93      IN      PTR     runner.zenfocus.com.br.
+94      IN      PTR     www.zenfocus.com.br.
+95      IN      PTR     db.zenfocus.com.br.
+96      IN      PTR     ca.zenfocus.com.br.

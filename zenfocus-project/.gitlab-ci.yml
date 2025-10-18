@@ -1,0 +1,269 @@
+# ========================================
+# Pipeline CI/CD Zenfocus
+# Projeto: Sistema de Gerenciamento Pomodoro
+# ========================================
+
+stages:
+  - build
+  - test
+  - deploy
+  - notify
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  APP_IMAGE: zenfocus-app:latest
+  CONTAINER_NAME: zenfocus-web
+
+# ========== STAGE: BUILD ==========
+build-image:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  script:
+    - echo "🔨 Construindo imagem Docker da aplicação..."
+    - docker build -t $APP_IMAGE ./web-app
+    - echo "💾 Salvando imagem como artefato..."
+    - docker save $APP_IMAGE > app-image.tar
+    - ls -lh app-image.tar
+  artifacts:
+    paths:
+      - app-image.tar
+    expire_in: 1 hour
+  tags:
+    - docker
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# ========== STAGE: TEST ==========
+test-syntax:
+  stage: test
+  image: php:8.2-cli
+  script:
+    - echo "🔍 Verificando sintaxe PHP..."
+    - find ./web-app/src -name "*.php" -exec php -l {} \;
+    - echo "✅ Sintaxe PHP válida!"
+  tags:
+    - docker
+  only:
+    - main
+    - develop
+    - merge_requests
+
+test-application:
+  stage: test
+  image: php:8.2-cli
+  services:
+    - mysql:8.0
+  variables:
+    MYSQL_ROOT_PASSWORD: test123
+    MYSQL_DATABASE: zenfocus_test
+    DB_HOST: mysql
+    DB_NAME: zenfocus_test
+    DB_USER: root
+    DB_PASS: test123
+  before_script:
+    - apt-get update && apt-get install -y default-mysql-client
+    - docker-php-ext-install pdo pdo_mysql
+    - echo "⏳ Aguardando MySQL..."
+    - sleep 10
+    - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE < ./web-app/src/database.sql
+  script:
+    - echo "🧪 Executando testes da aplicação..."
+    - php -S localhost:8000 -t ./web-app/src &
+    - sleep 2
+    - |
+      # Test API Health
+      echo "Testing API health endpoint..."
+      response=$(curl -s http://localhost:8000/api.php?action=health)
+      echo "Response: $response"
+      if echo "$response" | grep -q '"status":"healthy"'; then
+        echo "✅ Health check passed!"
+      else
+        echo "❌ Health check failed!"
+        exit 1
+      fi
+    - |
+      # Test Task Creation
+      echo "Testing task creation..."
+      response=$(curl -s -X POST http://localhost:8000/api.php \
+        -d "action=create" \
+        -d "titulo=Test Task" \
+        -d "descricao=Test Description" \
+        -d "tempo_estimado=25" \
+        -d "status=pendente")
+      echo "Response: $response"
+      if echo "$response" | grep -q '"success":true'; then
+        echo "✅ Task creation passed!"
+      else
+        echo "❌ Task creation failed!"
+        exit 1
+      fi
+    - echo "✅ Todos os testes passaram!"
+  tags:
+    - docker
+  dependencies:
+    - build-image
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# ========== STAGE: DEPLOY ==========
+deploy-production:
+  stage: deploy
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - echo "📦 Carregando imagem do artefato..."
+    - docker load < app-image.tar
+    - docker images
+  script:
+    - echo "🚀 Iniciando deploy em produção..."
+    - |
+      # Parar container existente
+      echo "⏸️  Parando container anterior..."
+      docker stop $CONTAINER_NAME 2>/dev/null || true
+      docker rm $CONTAINER_NAME 2>/dev/null || true
+    - |
+      # Iniciar novo container
+      echo "▶️  Iniciando novo container..."
+      docker run -d \
+        --name $CONTAINER_NAME \
+        --network zenfocus-project_zenfocus-net \
+        --ip 10.164.59.94 \
+        -e DB_HOST=zenfocus-db \
+        -e DB_NAME=zenfocus_db \
+        -e DB_USER=zenfocus \
+        -e DB_PASS=zenfocus123 \
+        -p 80:80 \
+        $APP_IMAGE
+    - sleep 5
+    - |
+      # Health check pós-deploy
+      echo "🏥 Verificando saúde da aplicação..."
+      for i in {1..10}; do
+        if docker exec $CONTAINER_NAME curl -f http://localhost/api.php?action=health 2>/dev/null; then
+          echo "✅ Aplicação está saudável!"
+          break
+        else
+          echo "⏳ Tentativa $i/10..."
+          sleep 3
+        fi
+      done
+    - echo "🎉 Deploy concluído com sucesso!"
+  environment:
+    name: production
+    url: http://www.zenfocus.com.br
+  tags:
+    - docker
+  dependencies:
+    - build-image
+    - test-application
+  only:
+    - main
+  when: manual
+
+deploy-staging:
+  stage: deploy
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker load < app-image.tar
+  script:
+    - echo "🚀 Iniciando deploy em staging..."
+    - docker stop zenfocus-web-staging 2>/dev/null || true
+    - docker rm zenfocus-web-staging 2>/dev/null || true
+    - docker run -d --name zenfocus-web-staging -p 8081:80 $APP_IMAGE
+    - echo "✅ Deploy em staging concluído!"
+  environment:
+    name: staging
+    url: http://staging.zenfocus.com.br:8081
+  tags:
+    - docker
+  dependencies:
+    - build-image
+    - test-application
+  only:
+    - develop
+  when: on_success
+
+# ========== STAGE: NOTIFY ==========
+notify-success:
+  stage: notify
+  image: curlimages/curl:latest
+  script:
+    - echo "📢 Enviando notificação de sucesso..."
+    - |
+      PIPELINE_STATUS="✅ SUCESSO"
+      PROJECT_NAME="Zenfocus"
+      COMMIT_MESSAGE="${CI_COMMIT_MESSAGE}"
+      COMMIT_AUTHOR="${CI_COMMIT_AUTHOR}"
+      PIPELINE_URL="${CI_PIPELINE_URL}"
+      
+      # Webhook Discord/Slack (substitua pela URL real)
+      MESSAGE="{
+        \"content\": \"**Pipeline ${PIPELINE_STATUS}**\",
+        \"embeds\": [{
+          \"title\": \"${PROJECT_NAME} - Deploy Concluído\",
+          \"description\": \"${COMMIT_MESSAGE}\",
+          \"color\": 3066993,
+          \"fields\": [
+            {\"name\": \"Autor\", \"value\": \"${COMMIT_AUTHOR}\", \"inline\": true},
+            {\"name\": \"Branch\", \"value\": \"${CI_COMMIT_REF_NAME}\", \"inline\": true},
+            {\"name\": \"Pipeline\", \"value\": \"[Ver Pipeline](${PIPELINE_URL})\"}
+          ],
+          \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"
+        }]
+      }"
+      
+      echo "Notificação: Pipeline concluído com sucesso!"
+      # curl -H "Content-Type: application/json" -d "$MESSAGE" "$WEBHOOK_URL"
+  tags:
+    - docker
+  when: on_success
+  only:
+    - main
+
+notify-failure:
+  stage: notify
+  image: curlimages/curl:latest
+  script:
+    - echo "📢 Enviando notificação de falha..."
+    - |
+      PIPELINE_STATUS="❌ FALHA"
+      PROJECT_NAME="Zenfocus"
+      COMMIT_MESSAGE="${CI_COMMIT_MESSAGE}"
+      PIPELINE_URL="${CI_PIPELINE_URL}"
+      
+      echo "⚠️  Pipeline falhou! Verifique os logs em ${PIPELINE_URL}"
+      # Webhook de notificação aqui
+  tags:
+    - docker
+  when: on_failure
+  only:
+    - main
+    - develop
+
+# ========== CLEANUP ==========
+cleanup:
+  stage: .post
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  script:
+    - echo "🧹 Limpando imagens antigas..."
+    - docker image prune -f
+    - docker container prune -f
+  tags:
+    - docker
+  when: always
+  only:
+    - main
+    - develop
