@@ -18,7 +18,7 @@ if ! docker network ls --format '{{.Name}}' | grep -q '^zenfocus-net$'; then
 fi
 
 # Subir serviços
-docker-compose up -d
+docker compose up -d
 
 echo "⏳ Aguardando GitLab inicializar (pode levar alguns minutos)..."
 sleep 60

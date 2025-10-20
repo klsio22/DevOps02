@@ -47,6 +47,27 @@ gitlab-rake "gitlab:password:reset[root]"
 
 - Coloque `gitlab.zenfocus.local.crt` e `.key` em `gitlab/ssl/` e ajuste `docker-compose.yml` como descrito no guia.
 
+Gerar certificados com o serviço `ca` (recomendado):
+
+```bash
+# Constrói e roda o container de CA que gera os certificados em ./gitlab/ssl
+docker-compose build ca
+docker-compose run --rm ca
+```
+
+Isso irá criar em `gitlab/ssl/` os arquivos:
+
+- `zenfocus-ca.crt.pem` (CA pública)
+- `zenfocus-ca.key.pem` (CA privada)
+- `gitlab.zenfocus.local.crt` (certificado do GitLab assinado pela CA)
+- `gitlab.zenfocus.local.key` (chave privada do GitLab)
+
+Após isso, reinicie o GitLab:
+
+```bash
+docker-compose up -d gitlab
+```
+
 Comandos úteis:
 
 ```bash

@@ -13,8 +13,7 @@
 
 ### 1. Aplicação Web Funcional ✓
 
-- **Frontend:** HTML5, CSS3, JavaScript ES6
-- **Backend:** PHP 8.2 com API REST
+- **CRUD:** PHP 8.2 junto com html,css e js
 - **Banco de Dados:** MySQL 8.0
 - **Funcionalidades:**
   - CRUD completo de tarefas

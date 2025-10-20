@@ -16,6 +16,18 @@ services:
       zenfocus-net:
         ipv4_address: 10.10.10.10
 
+  # Servidor de CA (gera CA e certificados para GitLab)
+  ca:
+    build:
+      context: ./ca
+    container_name: zenfocus-ca
+    volumes:
+      - ./gitlab/ssl:/certs
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.30
+    restart: "no"
+
   # Servidor GitLab
   gitlab:
     image: gitlab/gitlab-ce:latest
@@ -25,8 +37,10 @@ services:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'https://gitlab.zenfocus.local'
         gitlab_rails['gitlab_shell_ssh_port'] = 2222
-        nginx['listen_port'] = 80
-        nginx['listen_https'] = false
+        # Habilitar SSL se os arquivos existirem em /etc/gitlab/ssl
+        nginx['redirect_http_to_https'] = false
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.key"
     ports:
       - "80:80"
       - "443:443"
@@ -35,6 +49,7 @@ services:
       - ./gitlab/config:/etc/gitlab
       - ./gitlab/logs:/var/log/gitlab
       - ./gitlab/data:/var/opt/gitlab
+      - ./gitlab/ssl:/etc/gitlab/ssl
     networks:
       zenfocus-net:
         ipv4_address: 10.10.10.20
