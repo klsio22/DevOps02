@@ -13,3 +13,6 @@ node_modules/
 # Ignora pastas de build
 /dist
 /build
+
+# GitLab: ignorar conteúdo, manter pastas vazias via .gitkeep
+/zenfocus-gitlab/gitlab*
