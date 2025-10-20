@@ -42,8 +42,6 @@ services:
         nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.crt"
         nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.key"
     ports:
-      - "80:80"
-      - "443:443"
       - "2222:22"
     volumes:
       - ./gitlab/config:/etc/gitlab
@@ -55,6 +53,23 @@ services:
         ipv4_address: 10.10.10.20
     depends_on:
       - dns
+    restart: unless-stopped
+
+  # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o GitLab
+  proxy:
+    image: nginx:stable-alpine
+    container_name: zenfocus-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gitlab/ssl:/etc/nginx/ssl:ro
+    networks:
+      - zenfocus-net
+    depends_on:
+      - gitlab
     restart: unless-stopped
 
 networks:

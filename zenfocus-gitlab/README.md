@@ -1,3 +1,26 @@
+Proxy e acesso via navegador
+---------------------------
+
+Adicionei um serviço `proxy` (nginx) que expõe as portas 80 e 443 no host e faz reverse-proxy para o container `gitlab` na rede Docker. Isso permite acessar:
+
+- http://gitlab.zenfocus.local (redireciona para HTTPS)
+- https://gitlab.zenfocus.local
+
+Certifique-se de que o host resolva `gitlab.zenfocus.local`. Para testes locais, adicione no `/etc/hosts`:
+
+```bash
+sudo -- sh -c "echo '127.0.0.1 gitlab.zenfocus.local' >> /etc/hosts"
+```
+
+Ou consulte diretamente o DNS do container:
+
+```bash
+dig @127.0.0.1 -p 1053 gitlab.zenfocus.local A
+```
+Notas:
+- O GitLab leva alguns minutos para inicializar na primeira execução.
+- Se você usar o DNS interno, verifique conflitos de porta 53 no host.
+- Esse setup é pensado para ambientes de laboratório e desenvolvimento.
 # Zenfocus GitLab (Docker)
 
 Este projeto cria uma instância local do GitLab usando Docker e um container DNS para resolver `gitlab.zenfocus.local` dentro da rede do Docker.
