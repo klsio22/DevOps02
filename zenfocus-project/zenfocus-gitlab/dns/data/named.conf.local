@@ -1,0 +1,4 @@
+zone "zenfocus.local" {
+    type master;
+    file "/data/db.zenfocus.local";
+};

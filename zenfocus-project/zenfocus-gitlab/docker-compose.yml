@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Servidor DNS
+  dns:
+    image: sameersbn/bind:latest
+    container_name: zenfocus-dns
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    environment:
+      - WEBMIN_ENABLED=false
+    volumes:
+      - ./dns/data:/data
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.10
+
+  # Servidor GitLab
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: zenfocus-gitlab
+    hostname: gitlab.zenfocus.local
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.zenfocus.local'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2222:22"
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.20
+    depends_on:
+      - dns
+    restart: unless-stopped
+
+networks:
+  zenfocus-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
