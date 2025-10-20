@@ -86,3 +86,14 @@ Notas:
 - O GitLab leva alguns minutos para inicializar na primeira execução.
 - Se você usar o DNS interno, verifique conflitos de porta 53 no host.
 - Esse setup é pensado para ambientes de laboratório e desenvolvimento.
+
+DNS via porta alternativa
+------------------------
+
+Para evitar conflitos com serviços do host (ex.: systemd-resolved), o DNS do container está mapeado para a porta 1053 do host. Para consultar diretamente use:
+
+```bash
+dig @127.0.0.1 -p 1053 gitlab.zenfocus.local A
+```
+
+Se quiser que o sistema use essa resolução automaticamente, você pode configurar temporariamente o gerenciador de DNS do seu host para encaminhar consultas para 127.0.0.1:1053 ou ajustar `/etc/resolv.conf` (aviso: essas mudanças podem impactar o sistema).
