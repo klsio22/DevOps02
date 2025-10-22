@@ -40,6 +40,7 @@ zenfocus-gitlab/
     ├── logs/
     ├── data/
     └── ssl/
+    
 ```
 
 Passos rápidos:

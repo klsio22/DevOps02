@@ -72,6 +72,20 @@ services:
       - gitlab
     restart: unless-stopped
 
+  # Aplicação Pomodoro (PHP + Apache)
+  app:
+    image: php:8.2-apache
+    container_name: zenfocus-app
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+    volumes:
+      - ./app:/var/www/html:rw
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.21
+    restart: unless-stopped
+
 networks:
   zenfocus-net:
     external: true
