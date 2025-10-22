@@ -147,3 +147,104 @@ git clone ssh://git@localhost:2222/root/nome-do-projeto.git
 
 Dica: se usar o DNS local (`www.zenfocus.local` ou `gitlab.zenfocus.local`) certifique-se de adicionar entradas em `/etc/hosts` ou resolver via o DNS container.
 
+## TLS / CA — tornar o certificado do GitLab confiável localmente
+
+Se ao abrir `https://gitlab.zenfocus.local` o navegador mostrar "Não seguro", siga este passo-a-passo. Essas instruções cobrem criação da cadeia completa (fullchain), instalação da CA no sistema e importação no navegador.
+
+1) Garantir que o servidor entregue a cadeia completa (fullchain)
+
+```bash
+cd /home/$(whoami)/Documentos/www/DevOps02/zenfocus-gitlab/gitlab/ssl
+
+# backup
+sudo cp gitlab.zenfocus.local.crt gitlab.zenfocus.local.crt.bak
+
+# criar fullchain (certificado do servidor seguido pelo CA)
+sudo bash -c 'cat gitlab.zenfocus.local.crt zenfocus-ca.crt.pem > gitlab.zenfocus.local.fullchain.crt'
+
+# substituir o arquivo usado pelo proxy/GitLab
+sudo mv -f gitlab.zenfocus.local.fullchain.crt gitlab.zenfocus.local.crt
+sudo chown root:root gitlab.zenfocus.local.crt
+sudo chmod 644 gitlab.zenfocus.local.crt
+
+# reiniciar proxy (e GitLab se necessário)
+docker restart zenfocus-proxy
+# se você quiser que o GitLab reconfigure internamente
+docker exec -it zenfocus-gitlab gitlab-ctl reconfigure || true
+```
+
+2) Instalar/registrar a CA no sistema (Ubuntu / Pop!_OS)
+
+```bash
+# copiar a CA para o diretório de CAs locais
+sudo cp /home/$(whoami)/Documentos/www/DevOps02/zenfocus-gitlab/gitlab/ssl/zenfocus-ca.crt.pem /usr/local/share/ca-certificates/zenfocus-ca.crt
+
+# atualizar o store de CAs
+sudo update-ca-certificates
+```
+
+3) Verificar TLS com OpenSSL (rápido teste)
+
+```bash
+openssl s_client -connect 127.0.0.1:443 -servername gitlab.zenfocus.local -CAfile /home/$(whoami)/Documentos/www/DevOps02/zenfocus-gitlab/gitlab/ssl/zenfocus-ca.crt.pem </dev/null
+# procure por: Verify return code: 0 (ok)
+```
+
+4) Reinicie o navegador e limpe caches
+
+```bash
+# garantir que o navegador foi fechado
+pkill -f brave || true
+pkill -f chrome || true
+
+# (abra o navegador manualmente e limpe o cache TLS/host) ou:
+# Chrome/Brave -> chrome://net-internals/#dns  -> Clear host cache
+# Chrome/Brave -> chrome://net-internals/#sockets -> Flush socket pools
+```
+
+5) Importar a CA no perfil do Brave/Chromium (se o navegador não usar o store do sistema)
+
+```bash
+# instalar utilitário NSS
+sudo apt update && sudo apt install -y libnss3-tools
+
+# exemplo para Brave; ajuste o caminho do PROFILE se usar Chromium/Chrome
+PROFILE="$HOME/.config/BraveSoftware/Brave-Browser/Default"
+certutil -d sql:$PROFILE -A -n "Zenfocus CA" -t "CT,C,C" -i /home/$(whoami)/Documentos/www/DevOps02/zenfocus-gitlab/gitlab/ssl/zenfocus-ca.crt.pem
+
+# reinicie o navegador
+```
+
+6) Importar a CA no Firefox (opcional)
+
+Via GUI: Preferências → Privacidade & Segurança → Ver certificados → Autoridades → Importar → selecione `zenfocus-ca.crt.pem` e marque "Confiar nesta autoridade para identificar sites".
+
+Via linha (com libnss3-tools):
+
+```bash
+PROFILE_FF=$(ls -d $HOME/.mozilla/firefox/*.default-release | head -n1)
+certutil -d sql:$PROFILE_FF -A -n "Zenfocus CA" -t "CT,C,C" -i /home/$(whoami)/Documentos/www/DevOps02/zenfocus-gitlab/gitlab/ssl/zenfocus-ca.crt.pem
+```
+
+7) Troubleshooting rápido
+
+- Se o OpenSSL mostra `Verify return code: 0 (ok)` mas o navegador ainda marca inseguro:
+	- Verifique mixed content no DevTools Console (recursos HTTP bloqueados em página HTTPS).
+	- Confirme que o navegador foi reiniciado após importação da CA.
+	- Confirme que importou a CA no perfil correto do navegador (pasta Default ou o profile que você realmente usa).
+
+- Para verificar certs no perfil (se `certutil` instalado):
+
+```bash
+certutil -L -d sql:$PROFILE
+```
+
+8) Checklist rápido (resumo)
+
+- [ ] Criar fullchain em `gitlab/ssl` e reiniciar `zenfocus-proxy`
+- [ ] Copiar `zenfocus-ca.crt.pem` para `/usr/local/share/ca-certificates/` e `update-ca-certificates`
+- [ ] Reiniciar navegador
+- [ ] Se necessário, importar CA no perfil do navegador com `certutil`
+
+Se quiser, eu executo os passos 1, 2 e 5 aqui (posso precisar de `sudo` para copiar/atualizar CAs e instalar `libnss3-tools`). Diga se quer que eu proceda e eu seguirei adiante.
+
