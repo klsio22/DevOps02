@@ -105,3 +105,45 @@ Se tudo estiver correto, a página do app (Zenfocus - Pomodoro) deve aparecer.
 ---
 
 Arquivo gerado/atualizado automaticamente: `project-docs.md` (este documento).
+
+## Acesso ao GitLab local
+
+Usuário administrativo padrão: `root`
+
+Senha inicial gerada durante a instalação (se disponível):
+
+- A senha inicial pode ser encontrada em `gitlab/config/initial_root_password` no host (se o arquivo existir) ou dentro do container em `/etc/gitlab/initial_root_password`.
+- No ambiente atual, a senha inicial encontrada dentro do container foi: `+iTPqn0PrwuCX7d2QmUvvSKXXuQjZgE44mm/1wIVWxI=` (válida somente se você não a alterou depois da primeira inicialização).
+
+Como resetar a senha root (se a senha acima não funcionar):
+
+1) Reset rápido via rake (interativo):
+
+```bash
+docker exec -it zenfocus-gitlab gitlab-rake "gitlab:password:reset[root]"
+```
+
+2) Reset definitivo via runner (define senha direta):
+
+```bash
+docker exec -it zenfocus-gitlab gitlab-rails runner "user = User.find_by_username('root'); user.password = 'NovaSenhaSegura123'; user.password_confirmation = 'NovaSenhaSegura123'; user.save!"
+```
+
+Substitua `NovaSenhaSegura123` pela senha desejada.
+
+URL de acesso web (via proxy):
+
+- http://gitlab.zenfocus.local  (ou https://gitlab.zenfocus.local se configurar TLS no proxy)
+
+Acesso SSH para Git (porta mapeada no host):
+
+- Host: gitlab.zenfocus.local
+- Porta SSH no host: 2222 (mapeada para 22 do container)
+- Exemplo de clone:
+
+```bash
+git clone ssh://git@localhost:2222/root/nome-do-projeto.git
+```
+
+Dica: se usar o DNS local (`www.zenfocus.local` ou `gitlab.zenfocus.local`) certifique-se de adicionar entradas em `/etc/hosts` ou resolver via o DNS container.
+
