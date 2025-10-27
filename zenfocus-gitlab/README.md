@@ -60,12 +60,29 @@ chmod +x start-zenfocus.sh
 
 3. Recuperar senha root (dentro do container GitLab):
 
+Existem duas formas comuns de recuperar ou redefinir a senha `root` dentro do container GitLab.
+
+- Interativa (prompt):
+
 ```bash
-# Acesse o container
+# Acesse o container (shell interativo)
 docker exec -it zenfocus-gitlab bash
-# Reset de senha
+# Reset de senha (segue prompts interativos)
 gitlab-rake "gitlab:password:reset[root]"
 ```
+
+- Não interativa (definir uma nova senha diretamente):
+
+> Use este método se quiser automatizar ou definir uma senha imediata sem prompts. Substitua
+> `NovaSenhaSegura123!` por uma senha forte gerada por você.
+
+```bash
+# Executa um comando Ruby dentro do container que altera a senha do usuário root
+docker exec -it zenfocus-gitlab \
+    gitlab-rails runner "user = User.find_by_username('root'); user.password = 'NovaSenhaSegura123!'; user.password_confirmation = 'NovaSenhaSegura123!'; user.save!; puts 'Senha root alterada.'"
+```
+
+Observação: após alterar a senha, faça login via a interface web do GitLab ou via SSH/git conforme necessário. Se preferir, gere uma senha segura com um gerador (pwgen, openssl, etc.) e cole-a no comando acima.
 
 4. Habilitar SSL (opcional):
 
@@ -75,8 +92,8 @@ Gerar certificados com o serviço `ca` (recomendado):
 
 ```bash
 # Constrói e roda o container de CA que gera os certificados em ./gitlab/ssl
-docker-compose build ca
-docker-compose run --rm ca
+docker compose build ca
+docker compose run --rm ca
 ```
 
 Isso irá criar em `gitlab/ssl/` os arquivos:
@@ -89,7 +106,7 @@ Isso irá criar em `gitlab/ssl/` os arquivos:
 Após isso, reinicie o GitLab:
 
 ```bash
-docker-compose up -d gitlab
+docker compose up -d gitlab
 ```
 
 Comandos úteis:
@@ -98,14 +115,14 @@ Comandos úteis:
 #como fechar todos os containers
 docker stop $(docker ps -aq)
 # Parar serviços
-docker-compose down
+docker compose down
 # Reiniciar GitLab
-docker-compose restart gitlab
+docker compose restart gitlab
 # Backup dos dados
-docker-compose exec gitlab gitlab-backup create
+docker compose exec gitlab gitlab-backup create
 # Atualizar imagens e reiniciar
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
 ```
 
 Notas:
