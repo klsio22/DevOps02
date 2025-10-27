@@ -55,21 +55,6 @@ services:
       - dns
     restart: unless-stopped
 
-  # Serviço one-shot para bootstrap (criação inicial de usuário via API)
-  bootstrap:
-    image: curlimages/curl:8.1.2
-    container_name: zenfocus-bootstrap
-    depends_on:
-      - gitlab
-    volumes:
-      - ./gitlab/config:/config:ro
-      - ./scripts:/scripts:ro
-    entrypoint: ["/bin/sh", "-c"]
-    command: "/scripts/bootstrap-create-user.sh"
-    networks:
-      - zenfocus-net
-    restart: "no"
-
   # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o GitLab
   proxy:
     image: nginx:stable-alpine

@@ -1,21 +1,43 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# create-gitlab-user-api.sh
 
-# scripts/create-dev-user.sh
-# Cria um usuário no GitLab usando Users::CreateService e trata ServiceResponse
+GITLAB_URL="https://gitlab.zenfocus.com"
+USERNAME="${1:-devuser}"  # Valor padrão se não fornecido
+EMAIL="${2:-devuser@zenfocus.com}"
+PASSWORD="${3:-DevPass123!}"
 
-USERNAME=${1:-dev1}
-EMAIL=${2:-dev1@gitlab.zenfocus.com}
-PASSWORD=${3:-}
+echo "📝 Criando usuário: $USERNAME ($EMAIL)"
 
-if [ -z "$PASSWORD" ]; then
-  if command -v openssl >/dev/null 2>&1; then
-    PASSWORD=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
-  else
-    PASSWORD="Dev1Passw0rd!"
-  fi
-fi
+# Obter token root
+get_root_token() {
+    docker exec zenfocus-gitlab gitlab-rails runner \
+      "token = PersonalAccessToken.where(name: 'root-token').first&.token || PersonalAccessToken.create!(name: 'root-token', user: User.find(1), scopes: [:api], expires_at: 1.year.from_now).token; puts token" 2>/dev/null
+}
 
-echo "🔐 Tentando criar usuário '$USERNAME' (email: $EMAIL) com senha gerada..."
+# Criar usuário via API
+create_user_api() {
+    local token=$1
+    response=$(curl -s -w "%{http_code}" -X POST "$GITLAB_URL/api/v4/users" \
+      -H "PRIVATE-TOKEN: $token" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"name\": \"$USERNAME\",
+        \"username\": \"$USERNAME\",
+        \"email\": \"$EMAIL\",
+        \"password\": \"$PASSWORD\",
+        \"skip_confirmation\": true
+      }")
+    
+    echo "Response: $response"
+}
 
-docker exec zenfocus-gitlab bash -lc "gitlab-rails runner \"begin; root = User.find_by_username('root'); if root.nil?; puts 'ERROR: root user not found'; exit 1; end; params = { name: '${USERNAME}', username: '${USERNAME}', email: '${EMAIL}', password: '${PASSWORD}', password_confirmation: '${PASSWORD}', skip_confirmation: true }; res = Users::CreateService.new(root, params).execute; user = res.respond_to?(:payload) ? res.payload[:user] : (res.is_a?(Hash) ? res[:payload][:user] : nil); if user && user.respond_to?(:persisted?) && user.persisted?; puts 'SUCCESS: Usuario ${USERNAME} criado'; else; msg = res.respond_to?(:message) ? res.message : (res.is_a?(Hash) ? res[:message] : nil); puts 'ERROR: ' + (msg || 'creation failed'); if user && user.respond_to?(:errors); puts user.errors.full_messages.join('; '); end; exit 1; end; rescue => e; puts 'EX: ' + e.message; e.backtrace.each{|l| puts l}; exit 1; end\""
+# Main execution
+ROOT_TOKEN=$(get_root_token)
+echo "🔑 Token obtido: ${ROOT_TOKEN:0:10}..."
+
+create_user_api "$ROOT_TOKEN"
+echo "✅ Concluído!"
+
+# Verificar se foi criado
+echo "🔍 Verificando usuários existentes..."
+docker exec zenfocus-gitlab gitlab-rails runner "puts 'Usuários no GitLab:'; User.all.each { |u| puts \"  - #{u.username} (#{u.email})\" }"
