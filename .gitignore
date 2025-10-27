@@ -1,0 +1,18 @@
+# Ignora arquivos de sistema do macOS
+.DS_Store
+
+# Ignora arquivos de log
+*.log
+
+# Ignora a pasta de dependências do Node.js
+node_modules/
+
+# Ignora arquivos de ambiente (sensíveis)
+.env
+
+# Ignora pastas de build
+/dist
+/build
+
+# GitLab: ignorar conteúdo, manter pastas vazias via .gitkeep
+/zenfocus-gitlab/gitlab*

@@ -1,0 +1,4 @@
+zone "zenfocus.com" {
+    type master;
+    file "/data/db.zenfocus.com";
+};

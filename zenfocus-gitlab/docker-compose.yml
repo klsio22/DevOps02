@@ -1,0 +1,92 @@
+services:
+  # Servidor DNS
+  dns:
+    image: sameersbn/bind:latest
+    container_name: zenfocus-dns
+    # Mapeamento alterado para evitar conflito com serviços do host (ex: systemd-resolved)
+    # Use porta 1053 no host para encaminhar ao 53 do container
+    ports:
+      - "1053:53/udp"
+      - "1053:53/tcp"
+    environment:
+      - WEBMIN_ENABLED=false
+    volumes:
+      - ./dns/data:/data
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.10
+
+  # Servidor de CA (gera CA e certificados para GitLab)
+  ca:
+    build:
+      context: ./ca
+    container_name: zenfocus-ca
+    volumes:
+      - ./gitlab/ssl:/certs
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.30
+    restart: "no"
+
+  # Servidor GitLab
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: zenfocus-gitlab
+    hostname: gitlab.zenfocus.com
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.zenfocus.com'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        # Habilitar SSL se os arquivos existirem em /etc/gitlab/ssl
+        nginx['redirect_http_to_https'] = false
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.key"
+    ports:
+      - "2222:22"
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+      - ./gitlab/ssl:/etc/gitlab/ssl
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.20
+    depends_on:
+      - dns
+    restart: unless-stopped
+
+  # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o GitLab
+  proxy:
+    image: nginx:stable-alpine
+    container_name: zenfocus-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gitlab/ssl:/etc/nginx/ssl:ro
+    networks:
+      - zenfocus-net
+    depends_on:
+      - gitlab
+    restart: unless-stopped
+
+  # Aplicação Pomodoro (PHP + Apache)
+  app:
+    image: php:8.2-apache
+    container_name: zenfocus-app
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+    volumes:
+      - ./app:/var/www/html:rw
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.21
+    restart: unless-stopped
+
+networks:
+  zenfocus-net:
+    external: true
+    name: zenfocus-net
