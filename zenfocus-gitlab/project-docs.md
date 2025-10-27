@@ -4,13 +4,13 @@
 ## Resumo do que foi feito
 
 - Adicionado serviço `app` (PHP 8.2 + Apache) em `docker-compose.yml` com IP fixo 10.10.10.21 na rede `zenfocus-net`.
-- Configurado `zenfocus-proxy` (Nginx) em `proxy/site.conf` para rotear `www.zenfocus.local` para `http://10.10.10.21:80`.
+- Configurado `zenfocus-proxy` (Nginx) em `proxy/site.conf` para rotear `www.zenfocus.com` para `http://10.10.10.21:80`.
 - Criado um CRUD mínimo em `app/` (arquivos `index.php`, `styles.css`, `data/tasks.json`) para testar a aplicação Pomodoro.
 - Subidos os containers `dns`, `ca`, `gitlab`, `proxy` e `app` via `docker compose up -d`.
 
 ## Sintoma observado no browser
 
-Ao abrir `http://www.zenfocus.local` o navegador mostrou: "Não é possível acessar esse site - Não foi possível encontrar o endereço DNS de www.zenfocus.local. DNS_PROBE_POSSIBLE".
+Ao abrir `http://www.zenfocus.com` o navegador mostrou: "Não é possível acessar esse site - Não foi possível encontrar o endereço DNS de www.zenfocus.com. DNS_PROBE_POSSIBLE".
 
 Isso indica que o nome `www.zenfocus.local` não estava sendo resolvido pelo sistema operacional do host para `127.0.0.1` (ou para o DNS local que atende a zona).
 
@@ -38,7 +38,7 @@ Isso indica que o nome `www.zenfocus.local` não estava sendo resolvido pelo sis
 127.0.0.1 zenfocus.local
 ```
 
-Observação: falta a entrada `www.zenfocus.local`. Por isso o navegador não resolveu o nome. O curl funcionou porque eu forçei o header `Host` e a conexão foi feita para `127.0.0.1` diretamente.
+Observação: falta a entrada `www.zenfocus.com`. Por isso o navegador não resolveu o nome. O curl funcionou porque eu forçei o header `Host` e a conexão foi feita para `127.0.0.1` diretamente.
 
 ## Correção recomendada (adicionar host local)
 
@@ -56,13 +56,11 @@ sudo -- sh -c "echo '127.0.0.1 zenfocus.local' >> /etc/hosts"
 
 3. Limpar cache DNS do sistema (varia por distribuição). Exemplos:
 
-- systemd-resolved:
 
 ```bash
 sudo systemd-resolve --flush-caches
 ```
 
-- nscd:
 
 ```bash
 sudo service nscd restart
@@ -102,7 +100,6 @@ Se tudo estiver correto, a página do app (Zenfocus - Pomodoro) deve aparecer.
 - Melhorar o CRUD (editar tarefas, temporizador JS para Pomodoro real).
 - Publicar a app em um repositório GitLab local e criar um pipeline CI simples.
 
----
 
 Arquivo gerado/atualizado automaticamente: `project-docs.md` (este documento).
 

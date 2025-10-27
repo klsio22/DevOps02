@@ -1,4 +1,4 @@
-zone "zenfocus.local" {
+zone "zenfocus.com" {
     type master;
-    file "/data/db.zenfocus.local";
+    file "/data/db.zenfocus.com";
 };

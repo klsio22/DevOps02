@@ -3,19 +3,19 @@ Proxy e acesso via navegador
 
 Adicionei um serviço `proxy` (nginx) que expõe as portas 80 e 443 no host e faz reverse-proxy para o container `gitlab` na rede Docker. Isso permite acessar:
 
-- http://gitlab.zenfocus.local (redireciona para HTTPS)
-- https://gitlab.zenfocus.local
+ - http://gitlab.zenfocus.com (redireciona para HTTPS)
+ - https://gitlab.zenfocus.com
 
-Certifique-se de que o host resolva `gitlab.zenfocus.local`. Para testes locais, adicione no `/etc/hosts`:
+Certifique-se de que o host resolva `gitlab.zenfocus.com`. Para testes locais, adicione no `/etc/hosts`:
 
 ```bash
-sudo -- sh -c "echo '127.0.0.1 gitlab.zenfocus.local' >> /etc/hosts"
+sudo -- sh -c "echo '127.0.0.1 gitlab.zenfocus.com' >> /etc/hosts"
 ```
 
 Ou consulte diretamente o DNS do container:
 
 ```bash
-dig @127.0.0.1 -p 1053 gitlab.zenfocus.local A
+dig @127.0.0.1 -p 1053 gitlab.zenfocus.com A
 ```
 Notas:
 - O GitLab leva alguns minutos para inicializar na primeira execução.
@@ -23,7 +23,7 @@ Notas:
 - Esse setup é pensado para ambientes de laboratório e desenvolvimento.
 # Zenfocus GitLab (Docker)
 
-Este projeto cria uma instância local do GitLab usando Docker e um container DNS para resolver `gitlab.zenfocus.local` dentro da rede do Docker.
+Este projeto cria uma instância local do GitLab usando Docker e um container DNS para resolver `gitlab.zenfocus.com` dentro da rede do Docker.
 
 Estrutura do projeto:
 
@@ -34,7 +34,7 @@ zenfocus-gitlab/
 ├── dns/
 │   └── data/
 │       ├── named.conf.local
-│       └── db.zenfocus.local
+│       └── db.zenfocus.com
 └── gitlab/
     ├── config/
     ├── logs/
@@ -45,10 +45,10 @@ zenfocus-gitlab/
 
 Passos rápidos:
 
-1. Ajuste o `/etc/hosts` (no host) para apontar `gitlab.zenfocus.local` para `127.0.0.1` durante testes locais (opcional):
+1. Ajuste o `/etc/hosts` (no host) para apontar `gitlab.zenfocus.com` para `127.0.0.1` durante testes locais (opcional):
 
 ```bash
-sudo -- sh -c "echo '127.0.0.1 gitlab.zenfocus.local' >> /etc/hosts"
+sudo -- sh -c "echo '127.0.0.1 gitlab.zenfocus.com' >> /etc/hosts"
 ```
 
 2. Tornar o script executável e iniciar:
@@ -69,7 +69,7 @@ gitlab-rake "gitlab:password:reset[root]"
 
 4. Habilitar SSL (opcional):
 
-- Coloque `gitlab.zenfocus.local.crt` e `.key` em `gitlab/ssl/` e ajuste `docker-compose.yml` como descrito no guia.
+- Coloque `gitlab.zenfocus.com.crt` e `.key` em `gitlab/ssl/` e ajuste `docker-compose.yml` como descrito no guia.
 
 Gerar certificados com o serviço `ca` (recomendado):
 
@@ -83,8 +83,8 @@ Isso irá criar em `gitlab/ssl/` os arquivos:
 
 - `zenfocus-ca.crt.pem` (CA pública)
 - `zenfocus-ca.key.pem` (CA privada)
-- `gitlab.zenfocus.local.crt` (certificado do GitLab assinado pela CA)
-- `gitlab.zenfocus.local.key` (chave privada do GitLab)
+- `gitlab.zenfocus.com.crt` (certificado do GitLab assinado pela CA)
+- `gitlab.zenfocus.com.key` (chave privada do GitLab)
 
 Após isso, reinicie o GitLab:
 
@@ -119,7 +119,7 @@ DNS via porta alternativa
 Para evitar conflitos com serviços do host (ex.: systemd-resolved), o DNS do container está mapeado para a porta 1053 do host. Para consultar diretamente use:
 
 ```bash
-dig @127.0.0.1 -p 1053 gitlab.zenfocus.local A
+dig @127.0.0.1 -p 1053 gitlab.zenfocus.com A
 ```
 
 Se quiser que o sistema use essa resolução automaticamente, você pode configurar temporariamente o gerenciador de DNS do seu host para encaminhar consultas para 127.0.0.1:1053 ou ajustar `/etc/resolv.conf` (aviso: essas mudanças podem impactar o sistema).

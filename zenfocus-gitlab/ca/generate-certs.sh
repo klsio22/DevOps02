@@ -7,9 +7,9 @@ mkdir -p "$TARGET_DIR"
 
 CA_KEY="$TARGET_DIR/zenfocus-ca.key.pem"
 CA_CERT="$TARGET_DIR/zenfocus-ca.crt.pem"
-CERT_KEY="$TARGET_DIR/gitlab.zenfocus.local.key"
-CERT_CSR="$TARGET_DIR/gitlab.zenfocus.local.csr"
-CERT_CERT="$TARGET_DIR/gitlab.zenfocus.local.crt"
+CERT_KEY="$TARGET_DIR/gitlab.zenfocus.com.key"
+CERT_CSR="$TARGET_DIR/gitlab.zenfocus.com.csr"
+CERT_CERT="$TARGET_DIR/gitlab.zenfocus.com.crt"
 
 DAYS_VALID=3650
 
@@ -19,7 +19,7 @@ if [ -f "$CA_KEY" ] && [ -f "$CA_CERT" ]; then
 else
   echo "Gerando CA..."
   openssl genrsa -out "$CA_KEY" 4096
-  openssl req -x509 -new -nodes -key "$CA_KEY" -sha256 -days $DAYS_VALID -out "$CA_CERT" -subj "/C=BR/ST=SP/L=City/O=Zenfocus/OU=DevOps/CN=zenfocus.local"
+  openssl req -x509 -new -nodes -key "$CA_KEY" -sha256 -days $DAYS_VALID -out "$CA_CERT" -subj "/C=BR/ST=SP/L=City/O=Zenfocus/OU=DevOps/CN=zenfocus.com"
 fi
 
 # Gerar key e CSR para gitlab
@@ -28,7 +28,7 @@ if [ -f "$CERT_KEY" ] && [ -f "$CERT_CERT" ]; then
   exit 0
 fi
 
-echo "Gerando chave e CSR para gitlab.zenfocus.local..."
+echo "Gerando chave e CSR para gitlab.zenfocus.com..."
 openssl genrsa -out "$CERT_KEY" 2048
 
 # Criar um arquivo de extensão para SAN
@@ -44,12 +44,12 @@ req_extensions = v3_req
 subjectAltName = @alt_names
 
 [ alt_names ]
-DNS.1 = gitlab.zenfocus.local
+DNS.1 = gitlab.zenfocus.com
 DNS.2 = localhost
 IP.1 = 127.0.0.1
 EOF
 
-openssl req -new -key "$CERT_KEY" -out "$CERT_CSR" -subj "/C=BR/ST=SP/L=City/O=Zenfocus/OU=DevOps/CN=gitlab.zenfocus.local" -config <(cat /etc/ssl/openssl.cnf "$EXTFILE")
+openssl req -new -key "$CERT_KEY" -out "$CERT_CSR" -subj "/C=BR/ST=SP/L=City/O=Zenfocus/OU=DevOps/CN=gitlab.zenfocus.com" -config <(cat /etc/ssl/openssl.cnf "$EXTFILE")
 
 # Assinar CSR com a CA
 openssl x509 -req -in "$CERT_CSR" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$CERT_CERT" -days $DAYS_VALID -sha256 -extensions v3_req -extfile "$EXTFILE"

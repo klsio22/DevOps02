@@ -32,15 +32,15 @@ services:
   gitlab:
     image: gitlab/gitlab-ce:latest
     container_name: zenfocus-gitlab
-    hostname: gitlab.zenfocus.local
+    hostname: gitlab.zenfocus.com
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://gitlab.zenfocus.local'
+        external_url 'https://gitlab.zenfocus.com'
         gitlab_rails['gitlab_shell_ssh_port'] = 2222
         # Habilitar SSL se os arquivos existirem em /etc/gitlab/ssl
         nginx['redirect_http_to_https'] = false
-        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.crt"
-        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.local.key"
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.key"
     ports:
       - "2222:22"
     volumes:
