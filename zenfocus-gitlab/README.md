@@ -95,6 +95,8 @@ docker-compose up -d gitlab
 Comandos úteis:
 
 ```bash
+#como fechar todos os containers
+docker stop $(docker ps -aq)
 # Parar serviços
 docker-compose down
 # Reiniciar GitLab

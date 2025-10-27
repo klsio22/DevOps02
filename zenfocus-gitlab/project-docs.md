@@ -147,6 +147,36 @@ git clone ssh://git@localhost:2222/root/nome-do-projeto.git
 
 Dica: se usar o DNS local (`www.zenfocus.local` ou `gitlab.zenfocus.local`) certifique-se de adicionar entradas em `/etc/hosts` ou resolver via o DNS container.
 
+### Usuário de desenvolvimento automático
+
+Ao iniciar o ambiente com o script `start-zenfocus.sh`, o processo tentará criar automaticamente um usuário de teste chamado `dev1` assim que o GitLab estiver pronto.
+
+Padrões criados pelo script:
+
+- Usuário: `dev1`
+- E-mail: `dev1@zenfocus.local`
+- Senha: `Dev1Passw0rd!`
+
+Observações:
+
+- O script verifica se o GitLab está pronto e só cria o usuário se ele não existir.
+- Você pode alterar as credenciais editando `start-zenfocus.sh` (variáveis `DEV_USER`, `DEV_EMAIL`, `DEV_PASS`) antes de iniciar.
+- Para segurança, altere a senha do `dev1` após o primeiro login ou crie um usuário com credenciais diferentes para uso real.
+
+Comandos úteis para gerenciar o usuário (dentro do container GitLab):
+
+```bash
+# listar usuários com Rails runner
+docker exec -it zenfocus-gitlab gitlab-rails runner "puts User.all.map{|u| [u.id,u.username,u.email] }.inspect"
+
+# resetar senha de dev1
+docker exec -it zenfocus-gitlab gitlab-rails runner "u = User.find_by_username('dev1'); u.password = 'NovaSenha123!'; u.password_confirmation = 'NovaSenha123!'; u.save!"
+
+# remover usuário dev1
+docker exec -it zenfocus-gitlab gitlab-rails runner "u = User.find_by_username('dev1'); u.destroy if u"
+```
+
+
 ## TLS / CA — tornar o certificado do GitLab confiável localmente
 
 Se ao abrir `https://gitlab.zenfocus.local` o navegador mostrar "Não seguro", siga este passo-a-passo. Essas instruções cobrem criação da cadeia completa (fullchain), instalação da CA no sistema e importação no navegador.
