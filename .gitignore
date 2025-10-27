@@ -16,3 +16,6 @@ node_modules/
 
 # GitLab: ignorar conteúdo, manter pastas vazias via .gitkeep
 /zenfocus-gitlab/gitlab*
+
+# Ignorar arquivo de trust anchors do BIND que é opcional e pode ser gerado/fornecido pelo container
+/zenfocus-gitlab/dns/data/bind

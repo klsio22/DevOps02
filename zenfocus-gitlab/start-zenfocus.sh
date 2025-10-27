@@ -12,6 +12,16 @@ fi
 # Criar diretório padrão para volumes se não existir
 mkdir -p gitlab/config gitlab/logs gitlab/data gitlab/ssl dns/data
 
+# Garantir estrutura esperada pelo container BIND para evitar criação de symlinks
+# O sameersbn/bind costuma criar links/estruturas dentro do volume; criar as
+# pastas antecipadamente evita que apareça um arquivo/symlink `etc` vazio no host.
+BIND_VOL="./dns/data/bind"
+if [ -L "$BIND_VOL/etc" ]; then
+    echo "⚙️ Removendo symlink $BIND_VOL/etc criado anteriormente"
+    rm -f "$BIND_VOL/etc" || true
+fi
+mkdir -p "$BIND_VOL/etc" "$BIND_VOL/lib"
+
 # Criar rede se não existir
 if ! docker network ls --format '{{.Name}}' | grep -q '^zenfocus-net$'; then
     docker network create --subnet 10.10.10.0/24 zenfocus-net >/dev/null
