@@ -84,6 +84,37 @@ docker exec -it zenfocus-gitlab \
 
 Observação: após alterar a senha, faça login via a interface web do GitLab ou via SSH/git conforme necessário. Se preferir, gere uma senha segura com um gerador (pwgen, openssl, etc.) e cole-a no comando acima.
 
+4. Gerenciar usuários do GitLab:
+
+Scripts úteis para gerenciar usuários foram criados na pasta `scripts/`:
+
+- **Criar/Redefinir usuário**:
+
+```bash
+./scripts/criar-usuario-gitlab.sh <username> <email> <nome> <senha>
+
+# Exemplo:
+./scripts/criar-usuario-gitlab.sh dev1 dev1@zenfocus.com 'Developer 1' 'SenhaSeg@2024!'
+```
+
+- **Listar todos os usuários**:
+
+```bash
+./scripts/listar-usuarios-gitlab.sh
+```
+
+**Usuários existentes atualmente**:
+
+- `root` - `admin@gitlab.zenfocus.com` (Admin)
+- `dev1` - `dev1@zenfocus.com` (Senha: DevUser2024!Pass@)
+- `dev4` - `dev4@gitlab.zenfocus.com` (Senha: DevUser2024!Pass@)
+
+Para fazer login:
+
+1. Acesse: `https://gitlab.zenfocus.com`
+2. Use o email do usuário
+3. Use a senha definida
+
 4. Habilitar SSL (opcional):
 
 - Coloque `gitlab.zenfocus.com.crt` e `.key` em `gitlab/ssl/` e ajuste `docker-compose.yml` como descrito no guia.
