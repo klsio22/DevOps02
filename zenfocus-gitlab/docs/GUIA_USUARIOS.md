@@ -52,7 +52,6 @@ Exibe uma tabela com:
    ```
 
 2. **Use o email do usuário**:
-   - Para dev1: `dev1@zenfocus.com`
    - Para dev4: `dev4@gitlab.zenfocus.com`
 
 3. **Digite a senha**:
