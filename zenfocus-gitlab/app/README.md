@@ -1,13 +1,28 @@
-Zenfocus Pomodoro App - mínimo
+Zenfocus CRUD - Passo I
 
-Arquivos:
-- index.php - CRUD simples (usa ./data/tasks.json)
-- styles.css - estilos
+Aplicacao web CRUD em PHP puro com banco MariaDB, sem framework e sem proxy.
 
-Como testar localmente com o docker-compose do projeto:
+Arquivos principais:
+- index.php - CRUD completo (Create, Read, Update, Delete)
+- styles.css - estilos da interface
+- logo.svg - logotipo da empresa ficticia
+- init.sql - criacao da tabela tasks
+- Dockerfile - imagem PHP com extensao pdo_mysql
 
-1. Certifique-se de que a rede `zenfocus-net` exista (o script start-zenfocus.sh cria se não existir).
-2. Rode: docker compose up -d app
-3. Acesse: https://www.zenfocus.com (ou use /etc/hosts apontando para 127.0.0.1)
+Como executar:
 
-Observação: o proxy faz o TLS e redireciona para o container da app.
+1. Na raiz do projeto, rode:
+
+	./start-zenfocus.sh
+
+2. Acesse no navegador:
+
+	http://localhost:8080
+
+3. Opcional para usar dominio escolhido no trabalho:
+
+	sudo sh -c "echo '127.0.0.1 www.zenfocus.com' >> /etc/hosts"
+	http://www.zenfocus.com:8080
+
+Tabela unica usada no projeto:
+- tasks (id, title, description, status, due_date, created_at)

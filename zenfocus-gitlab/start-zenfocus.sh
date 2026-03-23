@@ -1,55 +1,38 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Iniciando Zenfocus GitLab..."
+echo "Iniciando ambiente do Passo I (CRUD + MariaDB)..."
 
 # Verificar se Docker está rodando
 if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker não está rodando. Inicie o Docker primeiro."
+    echo "Docker nao esta rodando. Inicie o Docker primeiro."
     exit 1
 fi
 
-# Criar diretório padrão para volumes se não existir
-mkdir -p gitlab/config gitlab/logs gitlab/data gitlab/ssl dns/data
+# Diretorios necessarios para a fase inicial
+mkdir -p app/data dns/data
 
 # Criar rede se não existir
 if ! docker network ls --format '{{.Name}}' | grep -q '^zenfocus-net$'; then
     docker network create --subnet 10.10.10.0/24 zenfocus-net >/dev/null
 fi
 
-# Subir serviços
-docker compose up -d
+# Subir apenas os servicos da primeira parte
+docker compose up -d db app
 
-echo "⏳ Aguardando GitLab inicializar (pode levar alguns minutos)..."
-sleep 60
+echo "Aguardando banco de dados inicializar..."
+sleep 8
 
-echo "✅ Zenfocus GitLab está rodando em:"
-echo "   🌐 HTTP: http://gitlab.zenfocus.com"
-echo "   🔗 SSH: git@gitlab.zenfocus.com:2222"
+echo "Ambiente inicial pronto."
+echo "Acesse a aplicacao em:"
+echo "  http://localhost:8080"
+echo "  http://www.zenfocus.com:8080  (apos ajustar /etc/hosts)"
 
-echo "📝 Para ver logs: docker logs -f zenfocus-gitlab"
+echo
+echo "Se precisar usar dominio no navegador, adicione no host:"
+echo "  sudo sh -c \"echo '127.0.0.1 www.zenfocus.com' >> /etc/hosts\""
 
-# criar usuário automático 'dev1' se o GitLab estiver pronto
-echo "⏳ Verificando disponibilidade do GitLab para criação de usuário 'dev1'..."
-TRIES=0
-MAX_TRIES=30
-while ! docker exec zenfocus-gitlab bash -lc "gitlab-rails runner 'puts :ok'" >/dev/null 2>&1; do
-    TRIES=$((TRIES+1))
-    if [ "$TRIES" -ge "$MAX_TRIES" ]; then
-        echo "⚠️ GitLab não ficou pronto em tempo para criar o usuário automático. Você pode criar manualmente depois."
-        break
-    fi
-    echo -n "."
-    sleep 5
-done
-
-if [ "$TRIES" -lt "$MAX_TRIES" ]; then
-    DEV_USER="dev1"
-    DEV_EMAIL="dev1@gitlab.zenfocus.com"
-    DEV_PASS="Dev1Passw0rd!"
-    echo
-    echo "🔐 Criando usuário '$DEV_USER' (email: $DEV_EMAIL) ..."
-    docker exec zenfocus-gitlab bash -lc "gitlab-rails runner \"user = User.find_by_username('$DEV_USER'); if user.nil?; user = User.create!(name: 'Dev One', username: '$DEV_USER', email: '$DEV_EMAIL', password: '$DEV_PASS', password_confirmation: '$DEV_PASS', confirmed_at: Time.now); puts 'user_created'; else; puts 'user_exists'; end\"" || true
-    echo "✅ Usuário automático processado (verifique no GitLab)."
-    echo "   Credenciais de teste: $DEV_USER / $DEV_PASS"
-fi
+echo "Comandos uteis:"
+echo "  docker compose ps"
+echo "  docker compose logs -f app db"
+echo "  docker compose down"
