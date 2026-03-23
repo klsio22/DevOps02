@@ -33,6 +33,9 @@ services:
     image: gitlab/gitlab-ce:latest
     container_name: zenfocus-gitlab
     hostname: ${GITLAB_DOMAIN}
+    mem_limit: 6g
+    cpus: "4.0"
+    shm_size: "256m"
     environment:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'https://${GITLAB_DOMAIN}'
