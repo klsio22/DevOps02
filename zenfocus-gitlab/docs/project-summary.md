@@ -12,7 +12,7 @@
 ### 1) Aplicacao web
 
 - Stack: PHP 8.2 com HTML/CSS/JS
-- Banco: MySQL 8.0
+- Banco: MariaDB
 - Funcionalidades:
   - CRUD de tarefas
   - Temporizador Pomodoro (25 min foco / 5 min pausa)
