@@ -31,6 +31,7 @@ Estrutura do projeto:
 zenfocus-gitlab/
 ├── docker-compose.yml
 ├── start-zenfocus.sh
+├── show-gitlab-credentials.sh
 ├── dns/
 │   └── data/
 │       ├── named.conf.local
@@ -58,33 +59,42 @@ chmod +x start-zenfocus.sh
 ./start-zenfocus.sh
 ```
 
-3. Recuperar senha root (dentro do container GitLab):
+3. Exibir senha inicial do root:
 
-Existem duas formas comuns de recuperar ou redefinir a senha `root` dentro do container GitLab.
+Ao final do `./start-zenfocus.sh`, as credenciais iniciais do root ja sao exibidas automaticamente.
+
+Se quiser consultar novamente depois, execute:
+
+```bash
+chmod +x show-gitlab-credentials.sh
+./show-gitlab-credentials.sh
+```
+
+Tambem e possivel informar container e dominio manualmente:
+
+```bash
+./show-gitlab-credentials.sh zenfocus-gitlab gitlab.zenfocus.com
+```
+
+Observacao: se a senha inicial nao estiver disponivel (por exemplo, ja consumida na primeira autenticacao), o script exibira `NAO_ENCONTRADA`.
+
+4. (Opcional) Redefinir senha root manualmente:
 
 - Interativa (prompt):
 
 ```bash
-# Acesse o container (shell interativo)
 docker exec -it zenfocus-gitlab bash
-# Reset de senha (segue prompts interativos)
 gitlab-rake "gitlab:password:reset[root]"
 ```
 
-- Não interativa (definir uma nova senha diretamente):
-
-> Use este método se quiser automatizar ou definir uma senha imediata sem prompts. Substitua
-> `NovaSenhaSegura123!` por uma senha forte gerada por você.
+- Nao interativa (definir uma nova senha diretamente):
 
 ```bash
-# Executa um comando Ruby dentro do container que altera a senha do usuário root
 docker exec -it zenfocus-gitlab \
     gitlab-rails runner "user = User.find_by_username('root'); user.password = 'NovaSenhaSegura123!'; user.password_confirmation = 'NovaSenhaSegura123!'; user.save!; puts 'Senha root alterada.'"
 ```
 
-Observação: após alterar a senha, faça login via a interface web do GitLab ou via SSH/git conforme necessário. Se preferir, gere uma senha segura com um gerador (pwgen, openssl, etc.) e cole-a no comando acima.
-
-4. Habilitar SSL (opcional):
+5. Habilitar SSL (opcional):
 
 - Coloque `gitlab.zenfocus.com.crt` e `.key` em `gitlab/ssl/` e ajuste `docker-compose.yml` como descrito no guia.
 

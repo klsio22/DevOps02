@@ -57,7 +57,12 @@
 
 - `start-zenfocus.sh`
   - Fluxo de inicializacao alinhado ao dominio `.com`
-  - Criacao automatica do usuario dev1 (quando GitLab fica pronto)
+  - Inicializacao dos servicos do GitLab sem bootstrap de usuario
+  - Chamada do script `show-gitlab-credentials.sh` para exibir credenciais iniciais do root
+
+- `show-gitlab-credentials.sh`
+  - Script dedicado para consultar e exibir a senha inicial do usuario `root`
+  - Pode ser executado de forma independente apos o ambiente subir
 
 ## Diagnostico realizado (acesso web)
 
@@ -90,9 +95,10 @@ Depois, limpar cache DNS do sistema e do navegador.
 1. Parar servicos e preparar diretorios persistentes do GitLab.
 2. Gerar certificados com o servico `ca`.
 3. Subir `dns`, `gitlab`, `proxy` e `app`.
-4. Rodar `gitlab-ctl reconfigure` no container GitLab, se necessario.
-5. Validar logs, portas e conectividade HTTPS.
-6. Instalar a CA local no sistema para remover alertas de certificado.
+4. Exibir credenciais iniciais do root com `./show-gitlab-credentials.sh`.
+5. Rodar `gitlab-ctl reconfigure` no container GitLab, se necessario.
+6. Validar logs, portas e conectividade HTTPS.
+7. Instalar a CA local no sistema para remover alertas de certificado.
 
 ## Diagnostico rapido para erro 502 no proxy
 
