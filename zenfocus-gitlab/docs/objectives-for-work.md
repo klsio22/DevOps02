@@ -1,6 +1,3 @@
-Aqui está o conteúdo formatado em Markdown, pronto para você copiar e salvar como um arquivo `.md` (por exemplo, `trabalho_pipeline.md`).
-
-```markdown
 # Trabalho 1 (único) - Pipeline de uma Aplicação Web
 
 **Objetivo:** Mostrar sua habilidade em montar um ambiente completo de construção, teste e implantação de uma aplicação web. Do código-fonte à execução em produção!
@@ -114,4 +111,3 @@ Crie um cenário claro para o seu vídeo.
 7.  **Comece cedo:** Comece o trabalho com no mínimo um mês de antecedência. Isso evita correria e garante a qualidade.
 
 **Bom trabalho!**
-```
