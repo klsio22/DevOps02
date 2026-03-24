@@ -1,9 +1,17 @@
 #!/bin/bash
 set -e
 
-# Diretório destino (montado)
-TARGET_DIR=/certs
-mkdir -p "$TARGET_DIR"
+# Diretorio destino:
+# - No container CA: /certs (volume montado)
+# - Execucao local: ../gitlab/ssl
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_DIR="${TARGET_DIR:-/certs}"
+
+if ! mkdir -p "$TARGET_DIR" 2>/dev/null; then
+  TARGET_DIR="${SCRIPT_DIR}/../gitlab/ssl"
+  mkdir -p "$TARGET_DIR"
+  echo "Sem permissao para usar /certs no host; usando $TARGET_DIR"
+fi
 
 CA_KEY="$TARGET_DIR/zenfocus-ca.key.pem"
 CA_CERT="$TARGET_DIR/zenfocus-ca.crt.pem"
@@ -13,9 +21,25 @@ CERT_CERT="$TARGET_DIR/gitlab.zenfocus.com.crt"
 
 DAYS_VALID=3650
 
-# Se já existe CA, não recriar
+certs_are_valid() {
+  [ -f "$CA_KEY" ] && [ -f "$CA_CERT" ] && [ -f "$CERT_KEY" ] && [ -f "$CERT_CERT" ] || return 1
+
+  openssl x509 -in "$CA_CERT" -noout >/dev/null 2>&1 || return 1
+  openssl x509 -in "$CERT_CERT" -noout >/dev/null 2>&1 || return 1
+  openssl verify -CAfile "$CA_CERT" "$CERT_CERT" >/dev/null 2>&1 || return 1
+
+  return 0
+}
+
+# Se já existe CA e certificado válidos, não recriar
+if certs_are_valid; then
+  echo "CA e certificado do GitLab já existem e estão válidos em $TARGET_DIR"
+  exit 0
+fi
+
+# Se já existe CA, não recriar apenas a CA
 if [ -f "$CA_KEY" ] && [ -f "$CA_CERT" ]; then
-  echo "CA já existe em $TARGET_DIR, pulando criação da CA"
+  echo "CA já existe em $TARGET_DIR, validando e prosseguindo com o certificado do GitLab"
 else
   echo "Gerando CA..."
   openssl genrsa -out "$CA_KEY" 4096
@@ -24,8 +48,7 @@ fi
 
 # Gerar key e CSR para gitlab
 if [ -f "$CERT_KEY" ] && [ -f "$CERT_CERT" ]; then
-  echo "Certificado do GitLab já existe, pulando geração"
-  exit 0
+  echo "Certificado do GitLab existe, mas a validação falhou; regenerando"
 fi
 
 echo "Gerando chave e CSR para gitlab.zenfocus.com..."
