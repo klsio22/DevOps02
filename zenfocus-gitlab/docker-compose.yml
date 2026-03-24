@@ -6,10 +6,10 @@ services:
     # Mapeamento alterado para evitar conflito com serviços do host (ex: systemd-resolved)
     # Use porta 1053 no host para encaminhar ao 53 do container
     ports:
-      - "1053:53/udp"
-      - "1053:53/tcp"
+      - '${DNS_PORT}:53/udp'
+      - '${DNS_PORT}:53/tcp'
     environment:
-      - WEBMIN_ENABLED=false
+      - WEBMIN_ENABLED=${WEBMIN_ENABLED}
     volumes:
       - ./dns/data:/data
     networks:
@@ -26,23 +26,24 @@ services:
     networks:
       zenfocus-net:
         ipv4_address: 10.10.10.30
-    restart: "no"
+    restart: 'no'
 
   # Servidor GitLab
   gitlab:
     image: gitlab/gitlab-ce:latest
     container_name: zenfocus-gitlab
-    hostname: gitlab.zenfocus.com
+    hostname: ${GITLAB_DOMAIN}
+    shm_size: "256m"
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://gitlab.zenfocus.com'
-        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        external_url 'https://${GITLAB_DOMAIN}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT}
         # Habilitar SSL se os arquivos existirem em /etc/gitlab/ssl
         nginx['redirect_http_to_https'] = false
-        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.crt"
-        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.zenfocus.com.key"
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/${GITLAB_DOMAIN}.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/${GITLAB_DOMAIN}.key"
     ports:
-      - "2222:22"
+      - '${GITLAB_SSH_PORT}:22'
     volumes:
       - ./gitlab/config:/etc/gitlab
       - ./gitlab/logs:/var/log/gitlab
@@ -60,8 +61,8 @@ services:
     image: nginx:stable-alpine
     container_name: zenfocus-proxy
     ports:
-      - "80:80"
-      - "443:443"
+      - '${PROXY_HTTP_PORT}:80'
+      - '${PROXY_HTTPS_PORT}:443'
     volumes:
       - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
@@ -73,20 +74,49 @@ services:
     restart: unless-stopped
 
   # Aplicação Pomodoro (PHP + Apache)
+  db:
+    image: mariadb:11
+    container_name: zenfocus-db
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      zenfocus-net:
+        ipv4_address: 10.10.10.22
+    restart: unless-stopped
+
+  # Aplicacao CRUD (PHP + Apache)
   app:
-    image: php:8.2-apache
+    build:
+      context: ./app
     container_name: zenfocus-app
     environment:
-      - APACHE_RUN_USER=www-data
-      - APACHE_RUN_GROUP=www-data
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${MARIADB_DATABASE}
+      - DB_USER=${MARIADB_USER}
+      - DB_PASSWORD=${MARIADB_PASSWORD}
+      - APP_DOMAIN=${APP_DOMAIN}
     volumes:
       - ./app:/var/www/html:rw
+    ports:
+      - '${APP_PORT}:80'
     networks:
       zenfocus-net:
         ipv4_address: 10.10.10.21
+    depends_on:
+      - db
     restart: unless-stopped
 
 networks:
   zenfocus-net:
     external: true
     name: zenfocus-net
+
+volumes:
+  db_data:
