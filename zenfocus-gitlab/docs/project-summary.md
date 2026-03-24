@@ -95,7 +95,7 @@ Depois, limpar cache DNS do sistema e do navegador.
 1. Parar servicos e preparar diretorios persistentes do GitLab.
 2. Gerar certificados com o servico `ca`.
 3. Subir `dns`, `gitlab`, `proxy` e `app`.
-4. Exibir credenciais iniciais do root com `./show-gitlab-credentials.sh`.
+4. Exibir credenciais iniciais do root com `./scripts/show-gitlab-credentials.sh`.
 5. Rodar `gitlab-ctl reconfigure` no container GitLab, se necessario.
 6. Validar logs, portas e conectividade HTTPS.
 7. Instalar a CA local no sistema para remover alertas de certificado.

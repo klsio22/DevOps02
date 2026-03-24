@@ -86,11 +86,11 @@ if [ "${START_GITLAB:-false}" = "true" ]; then
   echo
   
   # Exibir credenciais usando script separado
-  if [ -f ./show-gitlab-credentials.sh ]; then
-    ./show-gitlab-credentials.sh "$CONTAINER_NAME" "$GITLAB_DOMAIN"
+  if [ -f ./scripts/show-gitlab-credentials.sh ]; then
+    ./scripts/show-gitlab-credentials.sh "$CONTAINER_NAME" "$GITLAB_DOMAIN"
   else
-    echo "Script show-gitlab-credentials.sh não encontrado."
+    echo "Script show-gitlab-credentials.sh não encontrado em ./scripts/."
     echo "Para ver as credenciais, execute:"
-    echo "  ./show-gitlab-credentials.sh $CONTAINER_NAME $GITLAB_DOMAIN"
+    echo "  ./scripts/show-gitlab-credentials.sh $CONTAINER_NAME $GITLAB_DOMAIN"
   fi
 fi

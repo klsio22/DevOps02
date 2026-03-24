@@ -31,7 +31,8 @@ Estrutura do projeto:
 zenfocus-gitlab/
 ├── docker-compose.yml
 ├── start-zenfocus.sh
-├── show-gitlab-credentials.sh
+├── scripts/
+│   └── show-gitlab-credentials.sh
 ├── dns/
 │   └── data/
 │       ├── named.conf.local
@@ -66,17 +67,20 @@ Ao final do `./start-zenfocus.sh`, as credenciais iniciais do root ja sao exibid
 Se quiser consultar novamente depois, execute:
 
 ```bash
-chmod +x show-gitlab-credentials.sh
-./show-gitlab-credentials.sh
+chmod +x scripts/show-gitlab-credentials.sh
+./scripts/show-gitlab-credentials.sh
 ```
 
 Tambem e possivel informar container e dominio manualmente:
 
 ```bash
-./show-gitlab-credentials.sh zenfocus-gitlab gitlab.zenfocus.com
+./scripts/show-gitlab-credentials.sh zenfocus-gitlab gitlab.zenfocus.com
 ```
 
 Observacao: se a senha inicial nao estiver disponivel (por exemplo, ja consumida na primeira autenticacao), o script exibira `NAO_ENCONTRADA`.
+
+Importante: a senha inicial do `root` é temporária e o arquivo `/etc/gitlab/initial_root_password` normalmente
+deixa de existir após 24h. Salve a senha assim que ela aparecer.
 
 4. (Opcional) Redefinir senha root manualmente:
 
