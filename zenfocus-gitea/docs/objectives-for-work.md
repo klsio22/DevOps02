@@ -1,3 +1,4 @@
+<!-- Não alterar esse arquivo nunca -->
 # Trabalho 1 (único) - Pipeline de uma Aplicação Web
 
 **Objetivo:** Mostrar sua habilidade em montar um ambiente completo de construção, teste e implantação de uma aplicação web. Do código-fonte à execução em produção!
