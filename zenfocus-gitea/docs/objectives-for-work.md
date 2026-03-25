@@ -18,7 +18,7 @@ Encontre uma aplicação web CRUD na internet. Você pode usar qualquer uma, des
 *   **REQ05:** A aplicação deve ter apenas uma tabela, com 3 a 10 campos (colunas).
 *   **REQ06:** Embora trabalhemos com PHP, outras linguagens são permitidas, desde que o frontend seja HTML/CSS para navegadores.
 *   **REQ07:** Nada de frameworks, a menos que você consulte o professor antes.
-*   **REQ08:** Trabalharemos com MySQL/MariaDB, mas pode usar outros bancos acessíveis pela rede (nada de arquivos de texto ou SQLite).
+*   **REQ08:** Trabalharemos com MySQL/MariaDB, mas pode usar outros bancos acessíveis pela rede (nada de arquivos de texto ou 'SQLite').
 
 ---
 
