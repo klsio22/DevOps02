@@ -1,0 +1,132 @@
+services:
+  # Servidor DNS
+  dns:
+    image: sameersbn/bind:latest
+    container_name: zenfocus-gitea-dns
+    ports:
+      - '${DNS_PORT:-1053}:53/udp'
+      - '${DNS_PORT:-1053}:53/tcp'
+    environment:
+      - WEBMIN_ENABLED=${WEBMIN_ENABLED:-false}
+    volumes:
+      - ./dns/data:/data
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.10
+
+  # Servidor de CA (gera CA e certificados para Gitea)
+  ca:
+    build:
+      context: ./ca
+    container_name: zenfocus-gitea-ca
+    volumes:
+      - ./gitea/ssl:/certs
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.30
+    restart: 'no'
+
+  # Servidor Gitea
+  gitea:
+    image: gitea/gitea:latest
+    container_name: zenfocus-gitea
+    hostname: ${GITEA_DOMAIN:-gitea.zenfocus.com}
+    environment:
+      - USER_ID=1000
+      - GROUP_ID=1000
+      - GITEA__SERVER__DOMAIN=${GITEA_DOMAIN:-gitea.zenfocus.com}
+      - GITEA__SERVER__ROOT_URL=https://${GITEA_DOMAIN:-gitea.zenfocus.com}
+      - GITEA__SERVER__SSH_DOMAIN=${GITEA_DOMAIN:-gitea.zenfocus.com}
+      - GITEA__SERVER__SSH_PORT=${GITEA_SSH_PORT:-2222}
+      - GITEA__SERVER__SSH_LISTEN_PORT=22
+      - GITEA__SERVER__HTTP_PORT=3000
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=db:3306
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea123
+    ports:
+      - '${GITEA_SSH_PORT:-2222}:22'
+    volumes:
+      - ./gitea/data:/var/lib/gitea
+      - ./gitea/config:/etc/gitea
+      - ./gitea/logs:/var/log/gitea
+      - ./gitea/ssl:/etc/gitea/ssl
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.20
+    depends_on:
+      - dns
+      - db
+    restart: unless-stopped
+
+  # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o Gitea
+  proxy:
+    image: nginx:stable-alpine
+    container_name: zenfocus-gitea-proxy
+    ports:
+      - '${PROXY_HTTP_PORT:-80}:80'
+      - '${PROXY_HTTPS_PORT:-443}:443'
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gitea/ssl:/etc/nginx/ssl:ro
+    networks:
+      - zenfocus-gitea-net
+    depends_on:
+      - gitea
+    restart: unless-stopped
+
+  # Banco de dados para Gitea e Aplicação
+  db:
+    image: mariadb:11
+    container_name: zenfocus-gitea-db
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root123}
+      - MARIADB_DATABASE=${MARIADB_DATABASE:-zenfocus}
+      - MARIADB_USER=${MARIADB_USER:-zenfocus}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD:-zenfocus123}
+      - MARIADB_GITEA_DATABASE=${MARIADB_GITEA_DATABASE:-gitea}
+      - MARIADB_GITEA_USER=${MARIADB_GITEA_USER:-gitea}
+      - MARIADB_GITEA_PASSWORD=${MARIADB_GITEA_PASSWORD:-gitea123}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./app/init-gitea.sql:/docker-entrypoint-initdb.d/02-gitea.sql:ro
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.22
+    restart: unless-stopped
+
+  # Aplicacao CRUD (PHP + Apache)
+  app:
+    build:
+      context: ./app
+    container_name: zenfocus-gitea-app
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=${MARIADB_DATABASE:-zenfocus}
+      - DB_USER=${MARIADB_USER:-zenfocus}
+      - DB_PASSWORD=${MARIADB_PASSWORD:-zenfocus123}
+      - APP_DOMAIN=${APP_DOMAIN:-www.zenfocus.com}
+    volumes:
+      - ./app:/var/www/html:rw
+    ports:
+      - '${APP_PORT:-8080}:80'
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.21
+    depends_on:
+      - db
+    restart: unless-stopped
+
+networks:
+  zenfocus-gitea-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.30.30.0/24
+
+volumes:
+  db_data:

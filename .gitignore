@@ -16,3 +16,7 @@ node_modules/
 
 # GitLab: ignorar conteúdo, manter pastas vazias via .gitkeep
 /zenfocus-gitlab/gitlab*
+
+# Gitea e GitHub: ignorar conteúdo, manter pastas vazias via .gitkeep
+/zenfocus-gitea/gitea*
+/zenfocus-github/github*
