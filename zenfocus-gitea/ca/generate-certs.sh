@@ -1,16 +1,11 @@
 #!/bin/bash
 set -e
 
-# Diretório do script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Por padrão, dentro do container usa /certs; ao rodar localmente usa gitea/ssl
 CA_DIR="${CA_DIR:-$SCRIPT_DIR/../gitea/ssl}"
 DOMAIN="${GITEA_DOMAIN:-gitea.zenfocus.com}"
 DAYS_VALID=365
 
-# ---------- Opções ----------
-#   -f | --force   : limpa certificados antigos antes de gerar
 FORCE=false
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -19,7 +14,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ---------- Função de preparação ----------
 prepare_dir() {
   mkdir -p "${CA_DIR}" 2>/dev/null || true
   if [ ! -w "${CA_DIR}" ]; then
@@ -28,16 +22,14 @@ prepare_dir() {
       echo "Permissões ajustadas."
     else
       echo "Erro: não foi possível ajustar a propriedade de ${CA_DIR}."
-      echo "Execute o script com sudo ou ajuste manualmente."
       exit 1
     fi
   fi
 }
 
-# ---------- Limpeza opcional ----------
 if [ "$FORCE" = true ]; then
   echo "=== Forçando geração de novos certificados (removendo existentes) ==="
-  rm -f "${CA_DIR}"/*.crt "${CA_DIR}"/*.key "${CA_DIR}"/*.csr "${CA_DIR}"/ca.srl
+  rm -f "${CA_DIR}"/*.crt "${CA_DIR}"/*.key "${CA_DIR}"/*.csr "${CA_DIR}"/ca.srl "${CA_DIR}"/*.ext
 fi
 
 prepare_dir
@@ -56,18 +48,35 @@ echo "=== CA criada com sucesso ==="
 # Gerar chave privada para o dominio
 openssl genrsa -out "${CA_DIR}/${DOMAIN}.key" 2048
 
-# Gerar CSR (Certificate Signing Request)
+# Gerar CSR
 openssl req -new -key "${CA_DIR}/${DOMAIN}.key" -out "${CA_DIR}/${DOMAIN}.csr" \
     -subj "/C=BR/ST=Parana/L=Curitiba/O=Zenfocus Solutions/OU=IT/CN=${DOMAIN}"
 
-# Assinar certificado com a CA
+# FIX: criar arquivo de extensões com SubjectAltName
+# Navegadores modernos (Chrome, Firefox, Brave) ignoram o CN e exigem SAN.
+# Sem esse campo o erro é: SSL_ERROR_BAD_CERT_DOMAIN / NET::ERR_CERT_COMMON_NAME_INVALID
+cat > "${CA_DIR}/${DOMAIN}.ext" <<EXTEOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage=digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment
+extendedKeyUsage=serverAuth
+subjectAltName=DNS:${DOMAIN},DNS:*.${DOMAIN},DNS:localhost,IP:127.0.0.1
+EXTEOF
+
+# Assinar certificado com a CA incluindo as extensões SAN
 openssl x509 -req -days ${DAYS_VALID} -in "${CA_DIR}/${DOMAIN}.csr" \
     -CA "${CA_DIR}/ca.crt" -CAkey "${CA_DIR}/ca.key" -CAcreateserial \
+    -extfile "${CA_DIR}/${DOMAIN}.ext" \
     -out "${CA_DIR}/${DOMAIN}.crt"
 
 echo "=== Certificado para ${DOMAIN} gerado com sucesso ==="
 
-# Listar certificados gerados
+# Verificar SAN no certificado gerado
+echo ""
+echo "=== Verificando SAN no certificado ==="
+openssl x509 -in "${CA_DIR}/${DOMAIN}.crt" -noout -text \
+  | grep -A2 "Subject Alternative Name" || echo "⚠️  SAN não encontrado!"
+
 echo ""
 echo "Certificados gerados em ${CA_DIR}:"
 ls -lh "${CA_DIR}"/*.crt "${CA_DIR}"/*.key 2>/dev/null || true
