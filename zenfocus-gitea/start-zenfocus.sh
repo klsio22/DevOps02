@@ -1,23 +1,22 @@
 #!/bin/bash
 # @file start-zenfocus.sh
-# @brief Inicializa o ambiente Zenfocus Gitea completo.
+# @brief Start the full Zenfocus Gitea environment.
 #
 # @description
-#   Carrega variáveis de ambiente, valida certificados TLS e sobe
-#   todos os serviços via Docker Compose. Certificados são gerados
-#   automaticamente se ausentes ou incompletos — sem precisar rodar
-#   generate-certs.sh manualmente.
+#   Loads environment variables, validates TLS certificates and brings up
+#   all services via Docker Compose. Certificates are generated automatically
+#   if missing or incomplete — no need to run generate-certs.sh manually.
 #
 # @usage
-#   ./start-zenfocus.sh [opções]
+#   ./start-zenfocus.sh [options]
 #
-# @option --force-certs   Força regeneração dos certificados mesmo que existam.
-# @option --no-certs      Pula a etapa de geração de certificados.
+# @option --force-certs   Force regeneration of certificates even if present.
+# @option --no-certs      Skip the certificate generation step.
 #
-# @env GITEA_DOMAIN    Domínio do servidor Gitea. Padrão: gitea.zenfocus.com
-# @env GITEA_SSH_PORT  Porta SSH do Gitea.        Padrão: 2222
-# @env DNS_PORT        Porta do servidor DNS.      Padrão: 1053
-# @env APP_PORT        Porta da aplicação web.     Padrão: 8080
+# @env GITEA_DOMAIN    Gitea server domain. Default: gitea.zenfocus.com
+# @env GITEA_SSH_PORT  Gitea SSH port.       Default: 2222
+# @env DNS_PORT        DNS server port.      Default: 1053
+# @env APP_PORT        Web app port.         Default: 8080
 
 set -euo pipefail
 
@@ -98,16 +97,16 @@ echo -e "${RESET}"
 
 # ─── 1. Variáveis de ambiente ────────────────────────────────────────────────
 
-log_step "Carregando variáveis de ambiente"
+log_step "Loading environment variables"
 
 if [[ -f .env ]]; then
   set -a
   # shellcheck disable=SC1091
   source .env
   set +a
-  log_ok "Variáveis carregadas de .env"
+  log_ok "Variables loaded from .env"
 else
-  log_warn ".env não encontrado — usando valores padrão."
+  log_warn ".env not found — using default values."
   export GITEA_DOMAIN="${GITEA_DOMAIN:-gitea.zenfocus.com}"
   export GITEA_SSH_PORT="${GITEA_SSH_PORT:-2222}"
   export DNS_PORT="${DNS_PORT:-1053}"
@@ -119,7 +118,7 @@ SSL_DIR="${SCRIPT_DIR}/gitea/ssl"
 
 # ─── 2. Certificados TLS ─────────────────────────────────────────────────────
 
-log_step "Verificando certificados TLS"
+log_step "Checking TLS certificates"
 
 # Arquivos obrigatórios para proxy e Gitea funcionarem
 CERT_FILES=(
@@ -130,24 +129,24 @@ CERT_FILES=(
 )
 
 if [[ "$SKIP_CERTS" == true ]]; then
-  log_warn "Etapa de certificados ignorada (--no-certs)."
+  log_warn "Certificate step skipped (--no-certs)."
 
 elif [[ "$FORCE_CERTS" == true ]]; then
-  log_warn "Regeneração forçada (--force-certs)."
+  log_warn "Forced regeneration (--force-certs)."
   generate_certs "--force"
 
 elif certs_ok "${CERT_FILES[@]}"; then
-  log_ok "Certificados encontrados — nenhuma ação necessária."
+  log_ok "Certificates found — no action required."
   for f in "${CERT_FILES[@]}"; do
     log_info "$(basename "$f")  ($(du -sh "$f" | cut -f1))"
   done
 
 else
   # Detecta e exibe quais arquivos estão faltando
-  log_warn "Certificados ausentes ou incompletos — gerando automaticamente:"
+  log_warn "Certificates missing or incomplete — generating automatically:"
   for f in "${CERT_FILES[@]}"; do
     if [[ ! -f "$f" || ! -s "$f" ]]; then
-      log_info "  ✗  $(basename "$f")  ← faltando"
+      log_info "  ✗  $(basename "$f")  ← missing"
     fi
   done
   echo ""
@@ -156,22 +155,22 @@ fi
 
 # ─── 3. Serviços Docker ──────────────────────────────────────────────────────
 
-log_step "Iniciando serviços"
+log_step "Starting services"
 docker compose up -d dns db gitea proxy app
-log_ok "Todos os serviços iniciados."
+log_ok "All services started."
 
 # ─── Resumo ──────────────────────────────────────────────────────────────────
 
 SSH_PORT="${GITEA_SSH_PORT:-2222}"
 APP_PORT="${APP_PORT:-8080}"
 
-echo -e "\n${BOLD}  ✅  Ambiente pronto!${RESET}\n"
+echo -e "\n${BOLD}  ✅  Environment ready!${RESET}\n"
 printf "  %-22s %s\n" "Gitea (Web)"  "https://${DOMAIN}"
 printf "  %-22s %s\n" "Gitea (SSH)"  "ssh://git@${DOMAIN}:${SSH_PORT}"
-printf "  %-22s %s\n" "Aplicação"    "http://www.zenfocus.com:${APP_PORT}"
+printf "  %-22s %s\n" "Application"  "http://www.zenfocus.com:${APP_PORT}"
 echo ""
-echo "  Logs em tempo real:"
+echo "  Live logs:"
 echo "    docker compose logs -f"
 echo ""
-echo -e "  ${YELLOW}Nota:${RESET} o Gitea pode levar alguns minutos para inicializar."
+echo -e "  ${YELLOW}Note:${RESET} Gitea may take several minutes to finish starting up."
 echo ""
