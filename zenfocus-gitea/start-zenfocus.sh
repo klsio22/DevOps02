@@ -156,7 +156,7 @@ fi
 # ─── 3. Serviços Docker ──────────────────────────────────────────────────────
 
 log_step "Starting services"
-docker compose up -d dns db gitea proxy app
+docker compose up -d dns db gitea proxy
 log_ok "All services started."
 
 # ─── Resumo ──────────────────────────────────────────────────────────────────
@@ -167,7 +167,6 @@ APP_PORT="${APP_PORT:-8080}"
 echo -e "\n${BOLD}  ✅  Environment ready!${RESET}\n"
 printf "  %-22s %s\n" "Gitea (Web)"  "https://${DOMAIN}"
 printf "  %-22s %s\n" "Gitea (SSH)"  "ssh://git@${DOMAIN}:${SSH_PORT}"
-printf "  %-22s %s\n" "Application"  "http://www.zenfocus.com:${APP_PORT}"
 echo ""
 echo "  Live logs:"
 echo "    docker compose logs -f"

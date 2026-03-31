@@ -36,5 +36,26 @@ services:
       - db
     restart: unless-stopped
 
+  php-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pulsefocus-php-cli
+    environment:
+      - APP_COMPANY_NAME=ChronaPulse Labs
+      - APP_DOMAIN=focus.chronapulse.com.br
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=pulsefocus_db
+      - DB_USER=pulsefocus_user
+      - DB_PASSWORD=pulsefocus_pass
+      - DB_CHARSET=utf8mb4
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+
 volumes:
   db_data:

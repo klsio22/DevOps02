@@ -60,6 +60,27 @@ services:
       - db
     restart: unless-stopped
 
+  # Banco de dados para Gitea e Aplicacao
+  db:
+    image: mysql:8.0
+    container_name: zenfocus-gitea-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-zenfocus}
+      - MYSQL_USER=${MYSQL_USER:-zenfocus}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-zenfocus123}
+      - MYSQL_GITEA_DATABASE=${MYSQL_GITEA_DATABASE:-gitea}
+      - MYSQL_GITEA_USER=${MYSQL_GITEA_USER:-gitea}
+      - MYSQL_GITEA_PASSWORD=${MYSQL_GITEA_PASSWORD:-gitea123}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./app/init-gitea.sql:/docker-entrypoint-initdb.d/02-gitea.sql:ro
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.22
+    restart: unless-stopped
+
   # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o Gitea
   proxy:
     image: nginx:stable-alpine
@@ -69,11 +90,13 @@ services:
       - '${PROXY_HTTPS_PORT:-443}:443'
     volumes:
       - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./app/init-gitea.sql:/docker-entrypoint-initdb.d/02-gitea.sql:ro
+      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gitea/ssl:/etc/nginx/ssl:ro
     networks:
       zenfocus-gitea-net:
-        ipv4_address: 10.30.30.22
+        ipv4_address: 10.30.30.23
+    depends_on:
+      - gitea
     restart: unless-stopped
 
 networks:
