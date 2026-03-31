@@ -29,7 +29,23 @@ function db_connect(): mysqli
 
     $connection->set_charset($db['charset']);
 
+    ensure_tasks_table($connection);
+
     return $connection;
+}
+
+function ensure_tasks_table(mysqli $connection): void
+{
+    $connection->query(
+        "CREATE TABLE IF NOT EXISTS tasks (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(180) NOT NULL,
+            pomodoros_estimated INT NOT NULL DEFAULT 1,
+            pomodoros_completed INT NOT NULL DEFAULT 0,
+            status ENUM('todo', 'active', 'done') NOT NULL DEFAULT 'todo',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
 }
 
 function escape_html(string $value): string

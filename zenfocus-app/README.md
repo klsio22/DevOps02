@@ -1,55 +1,60 @@
-# OrbitVale Systems CRUD
+# PulseFocus Tasks
 
-Independent CRUD web application in pure PHP + HTML/CSS, fully isolated from `zenfocus-gitea`.
+Pomodoro-style task CRUD web application by ChronaPulse Labs.
 
-## Architecture
+## Isolation rule
 
-- Separate project folder and compose stack
-- Dedicated MariaDB instance (`db` service)
-- One table only: `service_requests`
-- Future integration boundary: REST API over HTTP
+- This project is independent from `zenfocus-gitea`
+- It has its own `docker-compose.yml` and MariaDB instance
+- No runtime communication with other stacks
+
+## Branding
+
+- Company: `ChronaPulse Labs`
+- Tool: `Pomofocus`
+- Domain reference: `focus.chronapulse.com.br`
 
 ## Stack
 
-- PHP 8.2 + Apache (no frameworks)
-- HTML/CSS only (no frontend frameworks)
-- MariaDB 11
-- Docker Compose (isolated)
+- Backend: pure PHP (no frameworks)
+- Frontend: HTML/CSS + Vanilla JS
+- Database: MariaDB 11
+- Runtime: Docker Compose (app + db)
 
-## Database table
+## Main table
 
-`service_requests` fields:
+Table: `tasks`
 
 1. `id` (INT, PK, auto increment)
-2. `client_name` (VARCHAR 120)
-3. `contact_email` (VARCHAR 150)
-4. `request_topic` (VARCHAR 150)
-5. `request_status` (ENUM: open, in_progress, closed)
-6. `requested_date` (DATE)
+2. `title` (VARCHAR 180)
+3. `pomodoros_estimated` (INT)
+4. `pomodoros_completed` (INT)
+5. `status` (ENUM: todo, active, done)
+6. `created_at` (TIMESTAMP)
 
-## Run with Docker
+This project keeps only one table and one CRUD domain (`tasks`).
+
+## Run
 
 ```bash
 docker compose up -d --build
 ```
 
-Access the app at:
+Application URL:
 
 - `http://localhost:8081/index.php`
 
-Database exposed locally on:
+MariaDB exposed locally:
 
 - `localhost:3307`
 
-## Services
+## Files
 
-- `app`: PHP + Apache (`Dockerfile`)
-- `db`: MariaDB + auto schema import from `schema.sql`
+- `index.php`: timer central + lista de tarefas + create/focus/delete
+- `edit.php`: task update form
+- `create.php`: dedicated task create form
+- `assets/js/main.js`: timer regressivo + acoes da home + confirmacao de exclusao
+- `assets/css/main.css`: layout visual da aplicacao
+- `schema.sql`: database and table creation
 
-## Pages
-
-- `index.php` (Read + Delete)
-- `create.php` (Create)
-- `edit.php` (Update)
-
-The logo appears on all pages via `includes/header.php`.
+No authentication and no reports module are included.

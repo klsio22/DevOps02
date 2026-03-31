@@ -4,28 +4,25 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 
-$pageTitle = 'Create Request';
+$pageTitle = 'Create Task';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $clientName = trim((string) ($_POST['client_name'] ?? ''));
-    $contactEmail = trim((string) ($_POST['contact_email'] ?? ''));
-    $requestTopic = trim((string) ($_POST['request_topic'] ?? ''));
-    $requestStatus = trim((string) ($_POST['request_status'] ?? 'open'));
-    $requestedDate = trim((string) ($_POST['requested_date'] ?? ''));
+    $title = trim((string) ($_POST['title'] ?? ''));
+    $estimated = max(1, (int) ($_POST['pomodoros_estimated'] ?? 1));
+    $status = (string) ($_POST['status'] ?? 'todo');
 
-    if ($clientName === '' || $contactEmail === '' || $requestTopic === '' || $requestedDate === '') {
-        $error = 'All fields are required.';
+    if ($title === '') {
+        $error = 'Task title is required.';
     } else {
         try {
             $connection = db_connect();
             $stmt = $connection->prepare(
-                'INSERT INTO service_requests (client_name, contact_email, request_topic, request_status, requested_date) VALUES (?, ?, ?, ?, ?)'
+                'INSERT INTO tasks (title, pomodoros_estimated, status) VALUES (?, ?, ?)'
             );
-            $stmt->bind_param('sssss', $clientName, $contactEmail, $requestTopic, $requestStatus, $requestedDate);
+            $stmt->bind_param('sis', $title, $estimated, $status);
             $stmt->execute();
-
-            header('Location: index.php');
+            header('Location: index.php?message=created');
             exit;
         } catch (Throwable $exception) {
             $error = 'Database error: ' . $exception->getMessage();
@@ -36,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="panel panel-form">
-    <h1>Create Service Request</h1>
+    <h1>Create Task</h1>
 
     <?php if ($error !== ''): ?>
         <p class="notice notice-error"><?= escape_html($error) ?></p>
@@ -44,32 +41,22 @@ require __DIR__ . '/includes/header.php';
 
     <form method="post" class="form-grid">
         <label>
-            Client Name
-            <input type="text" name="client_name" required>
+            Task title
+            <input type="text" name="title" required>
         </label>
 
         <label>
-            Contact Email
-            <input type="email" name="contact_email" required>
-        </label>
-
-        <label>
-            Request Topic
-            <input type="text" name="request_topic" required>
+            Estimated pomodoros
+            <input type="number" name="pomodoros_estimated" min="1" max="20" value="2" required>
         </label>
 
         <label>
             Status
-            <select name="request_status">
-                <option value="open">open</option>
-                <option value="in_progress">in_progress</option>
-                <option value="closed">closed</option>
+            <select name="status">
+                <option value="todo">todo</option>
+                <option value="active">active</option>
+                <option value="done">done</option>
             </select>
-        </label>
-
-        <label>
-            Requested Date
-            <input type="date" name="requested_date" required>
         </label>
 
         <div class="form-actions">

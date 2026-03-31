@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 
-$pageTitle = 'Edit Request';
+$pageTitle = 'Edit Task';
 $error = '';
 $id = (int) ($_GET['id'] ?? 0);
 
@@ -17,28 +17,27 @@ try {
     $connection = db_connect();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $clientName = trim((string) ($_POST['client_name'] ?? ''));
-        $contactEmail = trim((string) ($_POST['contact_email'] ?? ''));
-        $requestTopic = trim((string) ($_POST['request_topic'] ?? ''));
-        $requestStatus = trim((string) ($_POST['request_status'] ?? 'open'));
-        $requestedDate = trim((string) ($_POST['requested_date'] ?? ''));
+        $title = trim((string) ($_POST['title'] ?? ''));
+        $estimated = max(1, (int) ($_POST['pomodoros_estimated'] ?? 1));
+        $completed = max(0, (int) ($_POST['pomodoros_completed'] ?? 0));
+        $status = (string) ($_POST['status'] ?? 'todo');
 
-        if ($clientName === '' || $contactEmail === '' || $requestTopic === '' || $requestedDate === '') {
-            $error = 'All fields are required.';
+        if ($title === '') {
+            $error = 'Task title is required.';
         } else {
             $updateStmt = $connection->prepare(
-                'UPDATE service_requests SET client_name = ?, contact_email = ?, request_topic = ?, request_status = ?, requested_date = ? WHERE id = ?'
+                'UPDATE tasks SET title = ?, pomodoros_estimated = ?, pomodoros_completed = ?, status = ? WHERE id = ?'
             );
-            $updateStmt->bind_param('sssssi', $clientName, $contactEmail, $requestTopic, $requestStatus, $requestedDate, $id);
+            $updateStmt->bind_param('siisi', $title, $estimated, $completed, $status, $id);
             $updateStmt->execute();
 
-            header('Location: index.php');
+            header('Location: index.php?message=updated');
             exit;
         }
     }
 
     $selectStmt = $connection->prepare(
-        'SELECT id, client_name, contact_email, request_topic, request_status, requested_date FROM service_requests WHERE id = ? LIMIT 1'
+        'SELECT id, title, pomodoros_estimated, pomodoros_completed, status, created_at FROM tasks WHERE id = ? LIMIT 1'
     );
     $selectStmt->bind_param('i', $id);
     $selectStmt->execute();
@@ -56,7 +55,7 @@ try {
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="panel panel-form">
-    <h1>Edit Service Request #<?= $id ?></h1>
+    <h1>Edit Task #<?= $id ?></h1>
 
     <?php if ($error !== ''): ?>
         <p class="notice notice-error"><?= escape_html($error) ?></p>
@@ -65,32 +64,27 @@ require __DIR__ . '/includes/header.php';
     <?php if ($record): ?>
         <form method="post" class="form-grid">
             <label>
-                Client Name
-                <input type="text" name="client_name" value="<?= escape_html($record['client_name']) ?>" required>
+                Task title
+                <input type="text" name="title" value="<?= escape_html($record['title']) ?>" required>
             </label>
 
             <label>
-                Contact Email
-                <input type="email" name="contact_email" value="<?= escape_html($record['contact_email']) ?>" required>
+                Estimated pomodoros
+                <input type="number" name="pomodoros_estimated" min="1" max="20" value="<?= (int) $record['pomodoros_estimated'] ?>" required>
             </label>
 
             <label>
-                Request Topic
-                <input type="text" name="request_topic" value="<?= escape_html($record['request_topic']) ?>" required>
+                Completed pomodoros
+                <input type="number" name="pomodoros_completed" min="0" max="99" value="<?= (int) $record['pomodoros_completed'] ?>" required>
             </label>
 
             <label>
                 Status
-                <select name="request_status">
-                    <option value="open" <?= $record['request_status'] === 'open' ? 'selected' : '' ?>>open</option>
-                    <option value="in_progress" <?= $record['request_status'] === 'in_progress' ? 'selected' : '' ?>>in_progress</option>
-                    <option value="closed" <?= $record['request_status'] === 'closed' ? 'selected' : '' ?>>closed</option>
+                <select name="status">
+                    <option value="todo" <?= $record['status'] === 'todo' ? 'selected' : '' ?>>todo</option>
+                    <option value="active" <?= $record['status'] === 'active' ? 'selected' : '' ?>>active</option>
+                    <option value="done" <?= $record['status'] === 'done' ? 'selected' : '' ?>>done</option>
                 </select>
-            </label>
-
-            <label>
-                Requested Date
-                <input type="date" name="requested_date" value="<?= escape_html($record['requested_date']) ?>" required>
             </label>
 
             <div class="form-actions">
