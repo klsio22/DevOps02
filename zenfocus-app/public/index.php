@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/db.php';
+require __DIR__ . '/../app/core/database.php';
 
 $pageTitle = 'PulseFocus';
 $message = '';
@@ -76,7 +76,7 @@ try {
     $message = 'Database error: ' . $exception->getMessage();
 }
 
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '/../views/partials/header.php';
 ?>
 <section class="home-layout" data-initial-mode="<?= escape_html($clockModeDefault) ?>" data-pomodoro-minutes="40" data-short-break-minutes="5" data-long-break-minutes="15" data-active-estimated="<?= $activeTask ? (int) $activeTask['pomodoros_estimated'] : 1 ?>" data-active-completed="<?= $activeTask ? (int) $activeTask['pomodoros_completed'] : 0 ?>">
     <section class="timer-shell panel">
@@ -160,4 +160,4 @@ require __DIR__ . '/includes/header.php';
     </section>
 </section>
 
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../views/partials/footer.php'; ?>

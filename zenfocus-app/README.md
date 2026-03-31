@@ -48,13 +48,18 @@ MariaDB exposed locally:
 
 - `localhost:3307`
 
-## Files
+## Project structure
 
-- `index.php`: timer central + lista de tarefas + create/focus/delete
-- `edit.php`: task update form
-- `create.php`: dedicated task create form
-- `assets/js/main.js`: timer regressivo + acoes da home + confirmacao de exclusao
-- `assets/css/main.css`: layout visual da aplicacao
-- `schema.sql`: database and table creation
+- `public/`: only web-exposed directory
+- `public/index.php`: timer home + tasks list + quick CRUD actions
+- `public/create.php` and `public/edit.php`: task forms
+- `public/actions/`: public entrypoints that delegate to backend actions
+- `public/assets/css/main.css`: visual layout
+- `public/assets/js/main.js`: timer and UI interactions
+- `app/core/config.php`: app and DB config (+ `.env` fallback)
+- `app/core/database.php`: DB connection and helpers
+- `app/actions/`: backend CRUD handlers
+- `views/partials/`: reusable view fragments
+- `database/schema.sql`: schema bootstrap used by Docker
 
 No authentication and no reports module are included.

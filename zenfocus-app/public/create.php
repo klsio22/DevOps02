@@ -2,35 +2,13 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/db.php';
+require __DIR__ . '/../app/core/database.php';
 
 $pageTitle = 'Create Task';
-$error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = trim((string) ($_POST['title'] ?? ''));
-    $estimated = max(1, (int) ($_POST['pomodoros_estimated'] ?? 1));
-    $status = (string) ($_POST['status'] ?? 'todo');
+$error = (string) ($_GET['error'] ?? '');
 
-    if ($title === '') {
-        $error = 'Task title is required.';
-    } else {
-        try {
-            $connection = db_connect();
-            $stmt = $connection->prepare(
-                'INSERT INTO tasks (title, pomodoros_estimated, status) VALUES (?, ?, ?)'
-            );
-            $stmt->bind_param('sis', $title, $estimated, $status);
-            $stmt->execute();
-            header('Location: index.php?message=created');
-            exit;
-        } catch (Throwable $exception) {
-            $error = 'Database error: ' . $exception->getMessage();
-        }
-    }
-}
-
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '/../views/partials/header.php';
 ?>
 <section class="panel panel-form">
     <h1>Create Task</h1>
@@ -39,7 +17,8 @@ require __DIR__ . '/includes/header.php';
         <p class="notice notice-error"><?= escape_html($error) ?></p>
     <?php endif; ?>
 
-    <form method="post" class="form-grid">
+    <form method="post" action="actions/create.php" class="form-grid">
+        <input type="hidden" name="redirect" value="../create.php">
         <label>
             Task title
             <input type="text" name="title" required>
@@ -65,4 +44,4 @@ require __DIR__ . '/includes/header.php';
         </div>
     </form>
 </section>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../views/partials/footer.php'; ?>

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/db.php';
+require __DIR__ . '/../app/core/database.php';
 
 $pageTitle = 'Edit Task';
 $error = '';
@@ -15,26 +15,6 @@ if ($id <= 0) {
 
 try {
     $connection = db_connect();
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $title = trim((string) ($_POST['title'] ?? ''));
-        $estimated = max(1, (int) ($_POST['pomodoros_estimated'] ?? 1));
-        $completed = max(0, (int) ($_POST['pomodoros_completed'] ?? 0));
-        $status = (string) ($_POST['status'] ?? 'todo');
-
-        if ($title === '') {
-            $error = 'Task title is required.';
-        } else {
-            $updateStmt = $connection->prepare(
-                'UPDATE tasks SET title = ?, pomodoros_estimated = ?, pomodoros_completed = ?, status = ? WHERE id = ?'
-            );
-            $updateStmt->bind_param('siisi', $title, $estimated, $completed, $status, $id);
-            $updateStmt->execute();
-
-            header('Location: index.php?message=updated');
-            exit;
-        }
-    }
 
     $selectStmt = $connection->prepare(
         'SELECT id, title, pomodoros_estimated, pomodoros_completed, status, created_at FROM tasks WHERE id = ? LIMIT 1'
@@ -52,7 +32,11 @@ try {
     $error = 'Database error: ' . $exception->getMessage();
 }
 
-require __DIR__ . '/includes/header.php';
+if (isset($_GET['error']) && $_GET['error'] !== '') {
+    $error = (string) $_GET['error'];
+}
+
+require __DIR__ . '/../views/partials/header.php';
 ?>
 <section class="panel panel-form">
     <h1>Edit Task #<?= $id ?></h1>
@@ -62,7 +46,8 @@ require __DIR__ . '/includes/header.php';
     <?php endif; ?>
 
     <?php if ($record): ?>
-        <form method="post" class="form-grid">
+        <form method="post" action="actions/edit.php" class="form-grid">
+            <input type="hidden" name="id" value="<?= (int) $id ?>">
             <label>
                 Task title
                 <input type="text" name="title" value="<?= escape_html($record['title']) ?>" required>
@@ -94,4 +79,4 @@ require __DIR__ . '/includes/header.php';
         </form>
     <?php endif; ?>
 </section>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../views/partials/footer.php'; ?>

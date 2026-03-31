@@ -9,7 +9,7 @@ services:
       - MYSQL_PASSWORD=pulsefocus_pass
     volumes:
       - db_data:/var/lib/mysql
-      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
       - "3307:3306"
     restart: unless-stopped
