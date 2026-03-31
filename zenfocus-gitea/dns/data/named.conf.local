@@ -1,0 +1,19 @@
+options {
+    directory "/var/cache/bind";
+    recursion yes;
+    allow-recursion { any; };
+    allow-query { any; };
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+    dnssec-validation auto;
+    listen-on port 53 { any; };
+    listen-on-v6 port 53 { any; };
+};
+
+zone "zenfocus.com" IN {
+    type master;
+    file "/data/db.zenfocus.com";
+    allow-update { none; };
+};
