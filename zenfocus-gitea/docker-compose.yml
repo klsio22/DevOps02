@@ -98,29 +98,6 @@ services:
         ipv4_address: 10.30.30.22
     restart: unless-stopped
 
-  # Aplicacao CRUD (PHP + Apache)
-  app:
-    build:
-      context: ./app
-    container_name: zenfocus-gitea-app
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_NAME=${MYSQL_DATABASE:-zenfocus}
-      - DB_USER=${MYSQL_USER:-zenfocus}
-      - DB_PASSWORD=${MYSQL_PASSWORD:-zenfocus123}
-      - APP_DOMAIN=${APP_DOMAIN:-www.zenfocus.com}
-    volumes:
-      - ./app:/var/www/html:rw
-    ports:
-      - '${APP_PORT:-8080}:80'
-    networks:
-      zenfocus-gitea-net:
-        ipv4_address: 10.30.30.21
-    depends_on:
-      - db
-    restart: unless-stopped
-
 networks:
   zenfocus-gitea-net:
     driver: bridge

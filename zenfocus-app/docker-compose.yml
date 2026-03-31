@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: orbitvale-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=orbitvale_root
+      - MYSQL_DATABASE=orbitvale_crud
+      - MYSQL_USER=orbitvale_user
+      - MYSQL_PASSWORD=orbitvale_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orbitvale-app
+    environment:
+      - APP_COMPANY_NAME=OrbitVale Systems
+      - APP_DOMAIN=portal.orbitvale.com.br
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=orbitvale_crud
+      - DB_USER=orbitvale_user
+      - DB_PASSWORD=orbitvale_pass
+      - DB_CHARSET=utf8mb4
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:
