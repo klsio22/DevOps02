@@ -15,8 +15,13 @@ node_modules/
 /build
 
 # Gitea e GitHub: ignorar conteúdo, manter pastas vazias via .gitkeep
-/zenfocus-gitea/gitea/ssl*
-/zenfocus-gitea/gitea/data/ssh*
-/zenfocus-gitea/gitea/data/gitea*
-/zenfocus-gitea/gitea/data/git*
-!/zenfocus-gitea/gitea/data/gitea/conf*
+/zenfocus-gitea/gitea/ssl
+/zenfocus-gitea/gitea/data/ssh
+/zenfocus-gitea/gitea/data/git
+/zenfocus-gitea/gitea/data/gitea/sessions
+/zenfocus-gitea/gitea/data/gitea/queues
+/zenfocus-gitea/gitea/data/gitea/log
+/zenfocus-gitea/gitea/data/gitea/attachments
+/zenfocus-gitea/gitea/data/gitea/avatars
+/zenfocus-gitea/gitea/data/gitea/jwt
+/zenfocus-gitea/gitea/data/gitea/indexers
