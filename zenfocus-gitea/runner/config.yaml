@@ -1,0 +1,20 @@
+# Configuracao base do act_runner para Gitea Actions.
+# Mantida proxima ao padrao para reduzir risco no ambiente atual.
+
+log:
+  level: info
+
+runner:
+  file: .runner
+  capacity: 1
+  timeout: 3h
+  insecure: false
+
+cache:
+  enabled: false
+
+container:
+  network: zenfocus-gitea_zenfocus-gitea-net
+  privileged: false
+  options: >-
+    --add-host=gitea.zenfocus.com:10.30.30.20
