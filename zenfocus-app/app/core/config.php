@@ -38,7 +38,7 @@ return [
     'app' => [
         'company_name' => env_value('APP_COMPANY_NAME', 'ChronaPulse Labs'),
         'domain' => env_value('APP_DOMAIN', 'focus.chronapulse.com.br'),
-        'tool_name' => 'PulseFocus Tasks',
+        'tool_name' => 'PulseFocus',
     ],
     'db' => [
         'host' => env_value('DB_HOST', '127.0.0.1'),

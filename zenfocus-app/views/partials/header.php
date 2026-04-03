@@ -17,7 +17,7 @@ $pageTitle = $pageTitle ?? 'PulseFocus';
 <header class="topbar">
     <a class="brand" href="index.php">
         <img src="assets/img/logo.svg" alt="<?= escape_html($config['app']['company_name']) ?> logo" class="brand-logo">
-        <span class="brand-text">Pomofocus</span>
+        <span class="brand-text">PulseFocus</span>
     </a>
     <nav class="topbar-actions" aria-label="Header actions">
         <a class="top-link" href="index.php">Setting</a>

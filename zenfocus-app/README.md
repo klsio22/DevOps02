@@ -1,6 +1,8 @@
-# PulseFocus Tasks
+# pulsefocus-app
 
 Pomodoro-style task CRUD web application by ChronaPulse Labs.
+
+Project name: `pulsefocus-app`
 
 ## Isolation rule
 
@@ -11,7 +13,7 @@ Pomodoro-style task CRUD web application by ChronaPulse Labs.
 ## Branding
 
 - Company: `ChronaPulse Labs`
-- Tool: `Pomofocus`
+- Tool: `PulseFocus`
 - Domain reference: `focus.chronapulse.com.br`
 
 ## Stack
