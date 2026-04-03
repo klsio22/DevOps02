@@ -48,7 +48,8 @@ services:
     ports:
       - '${GITEA_SSH_PORT:-2222}:22'
     volumes:
-      - ./gitea/data:/var/lib/gitea
+      # A imagem oficial persiste repositórios/config em /data
+      - ./gitea/data:/data
       - ./gitea/config:/etc/gitea
       - ./gitea/logs:/var/log/gitea
       - ./gitea/ssl:/etc/gitea/ssl
@@ -74,8 +75,6 @@ services:
       - MYSQL_GITEA_PASSWORD=${MYSQL_GITEA_PASSWORD:-gitea123}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./app/init-gitea.sql:/docker-entrypoint-initdb.d/02-gitea.sql:ro
     networks:
       zenfocus-gitea-net:
         ipv4_address: 10.30.30.22

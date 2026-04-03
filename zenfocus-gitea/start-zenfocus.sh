@@ -16,7 +16,6 @@
 # @env GITEA_DOMAIN    Gitea server domain. Default: gitea.zenfocus.com
 # @env GITEA_SSH_PORT  Gitea SSH port.       Default: 2222
 # @env DNS_PORT        DNS server port.      Default: 1053
-# @env APP_PORT        Web app port.         Default: 8080
 
 set -euo pipefail
 
@@ -110,7 +109,6 @@ else
   export GITEA_DOMAIN="${GITEA_DOMAIN:-gitea.zenfocus.com}"
   export GITEA_SSH_PORT="${GITEA_SSH_PORT:-2222}"
   export DNS_PORT="${DNS_PORT:-1053}"
-  export APP_PORT="${APP_PORT:-8080}"
 fi
 
 DOMAIN="${GITEA_DOMAIN:-gitea.zenfocus.com}"
@@ -156,13 +154,12 @@ fi
 # ─── 3. Serviços Docker ──────────────────────────────────────────────────────
 
 log_step "Starting services"
-docker compose up -d dns db gitea proxy
+docker compose up -d --remove-orphans dns db gitea proxy
 log_ok "All services started."
 
 # ─── Resumo ──────────────────────────────────────────────────────────────────
 
 SSH_PORT="${GITEA_SSH_PORT:-2222}"
-APP_PORT="${APP_PORT:-8080}"
 
 echo -e "\n${BOLD}  ✅  Environment ready!${RESET}\n"
 printf "  %-22s %s\n" "Gitea (Web)"  "https://${DOMAIN}"
