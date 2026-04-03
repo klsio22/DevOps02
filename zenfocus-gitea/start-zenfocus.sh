@@ -52,6 +52,8 @@ log_warn()  { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 log_error() { echo -e "\n  ${RED}✖${RESET}  $*" >&2; }
 log_info()  { echo -e "     $*"; }
 
+COMPOSE_CMD="docker compose"
+
 # ─── Funções ─────────────────────────────────────────────────────────────────
 
 # @function certs_ok
@@ -84,6 +86,19 @@ generate_certs() {
     # shellcheck disable=SC2086
     docker compose run --rm --build $compose_flags ca
   fi
+}
+
+# @function reset_runner_registration
+# @brief Remove credencial .runner stale para forcar novo registro do act_runner.
+reset_runner_registration() {
+  local runner_data_dir="${SCRIPT_DIR}/runner/data"
+
+  if [[ ! -d "$runner_data_dir" ]]; then
+    return 0
+  fi
+
+  # Remove via container utilitario para evitar falha por permissao root no host.
+  docker run --rm -v "${runner_data_dir}:/data" alpine sh -c 'rm -f /data/.runner' >/dev/null 2>&1 || true
 }
 
 # ─── Banner ──────────────────────────────────────────────────────────────────
@@ -157,6 +172,26 @@ log_step "Starting services"
 docker compose up -d --remove-orphans dns db gitea proxy
 log_ok "All services started."
 
+# ─── 4. Act Runner (opcional) ───────────────────────────────────────────────
+
+if [[ -n "${ACT_RUNNER_REGISTRATION_TOKEN:-}" ]]; then
+  log_step "Starting Gitea Actions runner"
+  $COMPOSE_CMD --profile actions up -d --no-deps act_runner >/dev/null
+
+  # Caso o runner esteja com credencial stale, ele entra em loop "unregistered runner".
+  sleep 2
+  if $COMPOSE_CMD logs --tail=40 act_runner 2>/dev/null | grep -q "unregistered runner"; then
+    log_warn "Runner with stale registration detected. Re-registering..."
+    $COMPOSE_CMD --profile actions stop act_runner >/dev/null 2>&1 || true
+    reset_runner_registration
+    $COMPOSE_CMD --profile actions up -d --no-deps act_runner >/dev/null
+  fi
+
+  log_ok "Actions runner started."
+else
+  log_warn "ACT_RUNNER_REGISTRATION_TOKEN is empty. Runner was not started."
+fi
+
 # ─── Resumo ──────────────────────────────────────────────────────────────────
 
 SSH_PORT="${GITEA_SSH_PORT:-2222}"
@@ -167,6 +202,9 @@ printf "  %-22s %s\n" "Gitea (SSH)"  "ssh://git@${DOMAIN}:${SSH_PORT}"
 echo ""
 echo "  Live logs:"
 echo "    docker compose logs -f"
+if [[ -n "${ACT_RUNNER_REGISTRATION_TOKEN:-}" ]]; then
+  echo "    docker compose logs -f act_runner"
+fi
 echo ""
 echo -e "  ${YELLOW}Note:${RESET} Gitea may take several minutes to finish starting up."
 echo ""
