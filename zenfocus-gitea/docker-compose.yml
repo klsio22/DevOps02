@@ -4,10 +4,10 @@ services:
     image: sameersbn/bind:latest
     container_name: zenfocus-gitea-dns
     ports:
-      - '${DNS_PORT:-1053}:53/udp'
-      - '${DNS_PORT:-1053}:53/tcp'
+      - '${DNS_PORT}:53/udp'
+      - '${DNS_PORT}:53/tcp'
     environment:
-      - WEBMIN_ENABLED=${WEBMIN_ENABLED:-false}
+      - WEBMIN_ENABLED=${WEBMIN_ENABLED}
     volumes:
       - ./dns/data:/data
     networks:
@@ -30,25 +30,26 @@ services:
   gitea:
     image: gitea/gitea:latest
     container_name: zenfocus-gitea
-    hostname: ${GITEA_DOMAIN:-gitea.zenfocus.com}
+    hostname: ${GITEA_DOMAIN}
     environment:
       - USER_ID=1000
       - GROUP_ID=1000
-      - GITEA__SERVER__DOMAIN=${GITEA_DOMAIN:-gitea.zenfocus.com}
-      - GITEA__SERVER__ROOT_URL=https://${GITEA_DOMAIN:-gitea.zenfocus.com}
-      - GITEA__SERVER__SSH_DOMAIN=${GITEA_DOMAIN:-gitea.zenfocus.com}
-      - GITEA__SERVER__SSH_PORT=${GITEA_SSH_PORT:-2222}
+      - GITEA__SERVER__DOMAIN=${GITEA_DOMAIN}
+      - GITEA__SERVER__ROOT_URL=https://${GITEA_DOMAIN}
+      - GITEA__SERVER__SSH_DOMAIN=${GITEA_DOMAIN}
+      - GITEA__SERVER__SSH_PORT=${GITEA_SSH_PORT}
       - GITEA__SERVER__SSH_LISTEN_PORT=22
       - GITEA__SERVER__HTTP_PORT=3000
       - GITEA__database__DB_TYPE=mysql
       - GITEA__database__HOST=db:3306
-      - GITEA__database__NAME=${MYSQL_GITEA_DATABASE:-gitea}
-      - GITEA__database__USER=${MYSQL_GITEA_USER:-gitea}
-      - GITEA__database__PASSWD=${MYSQL_GITEA_PASSWORD:-gitea123}
+      - GITEA__database__NAME=${MYSQL_DATABASE}
+      - GITEA__database__USER=${MYSQL_USER}
+      - GITEA__database__PASSWD=${MYSQL_PASSWORD}
     ports:
-      - '${GITEA_SSH_PORT:-2222}:22'
+      - '${GITEA_SSH_PORT}:22'
     volumes:
-      - ./gitea/data:/var/lib/gitea
+      # A imagem oficial persiste repositórios/config em /data
+      - ./gitea/data:/data
       - ./gitea/config:/etc/gitea
       - ./gitea/logs:/var/log/gitea
       - ./gitea/ssl:/etc/gitea/ssl
@@ -60,65 +61,40 @@ services:
       - db
     restart: unless-stopped
 
-  # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o Gitea
-  proxy:
-    image: nginx:stable-alpine
-    container_name: zenfocus-gitea-proxy
-    ports:
-      - '${PROXY_HTTP_PORT:-80}:80'
-      - '${PROXY_HTTPS_PORT:-443}:443'
-    volumes:
-      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./gitea/ssl:/etc/nginx/ssl:ro
-    networks:
-      - zenfocus-gitea-net
-    depends_on:
-      - gitea
-    restart: unless-stopped
-
-  # Banco de dados para Gitea e Aplicação
+  # Banco de dados para Gitea e Aplicacao
   db:
     image: mysql:8.0
     container_name: zenfocus-gitea-db
+    ports:
+      - '${MYSQL_BIND_HOST}:${MYSQL_PORT}:3306'
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-zenfocus}
-      - MYSQL_USER=${MYSQL_USER:-zenfocus}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-zenfocus123}
-      - MYSQL_GITEA_DATABASE=${MYSQL_GITEA_DATABASE:-gitea}
-      - MYSQL_GITEA_USER=${MYSQL_GITEA_USER:-gitea}
-      - MYSQL_GITEA_PASSWORD=${MYSQL_GITEA_PASSWORD:-gitea123}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./app/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./app/init-gitea.sql:/docker-entrypoint-initdb.d/02-gitea.sql:ro
     networks:
       zenfocus-gitea-net:
         ipv4_address: 10.30.30.22
     restart: unless-stopped
 
-  # Aplicacao CRUD (PHP + Apache)
-  app:
-    build:
-      context: ./app
-    container_name: zenfocus-gitea-app
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_NAME=${MYSQL_DATABASE:-zenfocus}
-      - DB_USER=${MYSQL_USER:-zenfocus}
-      - DB_PASSWORD=${MYSQL_PASSWORD:-zenfocus123}
-      - APP_DOMAIN=${APP_DOMAIN:-www.zenfocus.com}
-    volumes:
-      - ./app:/var/www/html:rw
+  # Proxy web (nginx) expõe HTTP/HTTPS no host e faz reverse-proxy para o Gitea
+  proxy:
+    image: nginx:stable-alpine
+    container_name: zenfocus-gitea-proxy
     ports:
-      - '${APP_PORT:-8080}:80'
+      - '${PROXY_HTTP_PORT}:80'
+      - '${PROXY_HTTPS_PORT}:443'
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./proxy/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gitea/ssl:/etc/nginx/ssl:ro
     networks:
       zenfocus-gitea-net:
-        ipv4_address: 10.30.30.21
+        ipv4_address: 10.30.30.23
     depends_on:
-      - db
+      - gitea
     restart: unless-stopped
 
 networks:
