@@ -97,6 +97,29 @@ services:
       - gitea
     restart: unless-stopped
 
+  # Act Runner do Gitea Actions (opcional via profile)
+  act_runner:
+    image: docker.io/gitea/act_runner:latest
+    container_name: zenfocus-gitea-runner
+    profiles:
+      - actions
+    environment:
+      - CONFIG_FILE=/config.yaml
+      - GITEA_INSTANCE_URL=${ACT_RUNNER_INSTANCE_URL:-https://${GITEA_DOMAIN}}
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${ACT_RUNNER_REGISTRATION_TOKEN:-}
+      - GITEA_RUNNER_NAME=${ACT_RUNNER_NAME:-zenfocus-runner}
+      - GITEA_RUNNER_LABELS=${ACT_RUNNER_LABELS:-ubuntu-latest:docker://node:20-bookworm,ubuntu-22.04:docker://node:20-bookworm}
+    volumes:
+      - ./runner/config.yaml:/config.yaml:ro
+      - ./runner/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      zenfocus-gitea-net:
+        ipv4_address: 10.30.30.24
+    depends_on:
+      - gitea
+    restart: unless-stopped
+
 networks:
   zenfocus-gitea-net:
     driver: bridge

@@ -25,3 +25,7 @@ node_modules/
 /zenfocus-gitea/gitea/data/gitea/avatars
 /zenfocus-gitea/gitea/data/gitea/jwt
 /zenfocus-gitea/gitea/data/gitea/indexers
+/zenfocus-gitea/gitea/data/gitea/actions_log
+
+
+/zenfocus-gitea/runner/data
