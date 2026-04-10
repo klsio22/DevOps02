@@ -167,7 +167,16 @@ ssh -i "$PEM_KEY" \
     -o StrictHostKeyChecking=no \
     -o ConnectTimeout=10 \
     "${EC2_USER}@${EC2_HOST}" \
-    "git -C ${REPO_PATH} remote set-url origin '${NEW_REMOTE}'"
+    "set -e; \
+     mkdir -p ${REPO_PATH}; \
+     if [ ! -d ${REPO_PATH}/.git ]; then \
+       git -C ${REPO_PATH} init >/dev/null; \
+     fi; \
+     if git -C ${REPO_PATH} remote get-url origin >/dev/null 2>&1; then \
+       git -C ${REPO_PATH} remote set-url origin '${NEW_REMOTE}'; \
+     else \
+       git -C ${REPO_PATH} remote add origin '${NEW_REMOTE}'; \
+     fi"
 
 log_ok "Remote atualizado."
 
