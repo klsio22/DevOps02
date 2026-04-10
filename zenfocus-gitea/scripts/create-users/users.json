@@ -1,0 +1,33 @@
+{
+  "_comment": "Arquivo de usuários para criação em massa no Gitea.",
+  "_doc": {
+    "visibility": "public | private | limited",
+    "must_change_password": "true = usuário troca senha no primeiro login"
+  },
+  "users": [
+    {
+      "username": "alice",
+      "full_name": "Alice Souza",
+      "email": "alice@zenfocus.com",
+      "password": "Alice@2026!",
+      "visibility": "public",
+      "must_change_password": false
+    },
+    {
+      "username": "bob",
+      "full_name": "Bob Lima",
+      "email": "bob@zenfocus.com",
+      "password": "Bob@2026!",
+      "visibility": "public",
+      "must_change_password": false
+    },
+    {
+      "username": "carol",
+      "full_name": "Carol Mendes",
+      "email": "carol@zenfocus.com",
+      "password": "Carol@2026!",
+      "visibility": "public",
+      "must_change_password": true
+    }
+  ]
+}
