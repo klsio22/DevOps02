@@ -21,7 +21,7 @@ O workspace foi dividido em dois blocos principais:
 
 Aplicacao web em PHP puro (sem framework), com frontend HTML/CSS/JS e banco MariaDB.
 
-- Empresa ficticia: **ChronaPulse Labs**
+- Empresa ficticia: **Zenfocus**
 - Produto: **PulseFocus Tasks / Pomofocus**
 - Execucao local (sem dominio): `http://localhost:8081/index.php`
 - Regra de negocio: CRUD com **uma unica tabela** (`tasks`)
